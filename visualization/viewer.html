@@ -1,0 +1,2519 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<title>BluffBots replay</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%230b5d37' stroke='%23f5c451' stroke-width='2'/><circle cx='16' cy='16' r='5' fill='%23f5c451'/><circle cx='12' cy='14' r='1.2' fill='%236c8dff'/><circle cx='20' cy='14' r='1.2' fill='%236c8dff'/></svg>" />
+<style>
+  :root {
+    --felt-a: #0b5d37;
+    --felt-b: #094a2b;
+    --rail: #2b1b0f;
+    --rail-hi: #5a3a1f;
+    --bg: #0f1117;
+    --panel: #161a24;
+    --panel-2: #1c2130;
+    --ink: #e6e8ee;
+    --ink-dim: #9aa1b2;
+    --accent: #f5c451;
+    --accent-2: #6c8dff;
+    --red: #e44;
+    --green: #4ad47a;
+    --fold: #5a5f6c;
+    --actor: #ffd36a;
+    --seat-0: #f08a5d;
+    --seat-1: #7dbf8d;
+    --seat-2: #c792ea;
+    --seat-3: #f0c46b;
+    --seat-4: #6acfe3;
+    --seat-5: #f47cb0;
+    --doll-male: #6ad7ff;
+    --doll-female: #ff8fc8;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: radial-gradient(1200px 600px at 50% 40%, #1a2233 0%, var(--bg) 60%);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+    font-size: 14px;
+    overflow: hidden;
+  }
+
+  header {
+    display: flex; align-items: center; gap: 16px;
+    padding: 10px 16px; background: #0c0e14; border-bottom: 1px solid #1e2230;
+    position: sticky; top: 0; z-index: 5;
+  }
+  header h1 {
+    font-size: 14px; margin: 0; font-weight: 700;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  header h1 .brand-mark {
+    width: 18px; height: 18px; flex: none;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 50% 50%, var(--accent) 0 28%, transparent 29%),
+      conic-gradient(var(--accent) 0 12.5%, transparent 0 25%, var(--accent) 0 37.5%, transparent 0 50%, var(--accent) 0 62.5%, transparent 0 75%, var(--accent) 0 87.5%, transparent 0 100%);
+    box-shadow: inset 0 0 0 1.5px var(--accent), 0 0 0 1px #1a1200;
+  }
+  header h1 .brand-bluff { color: var(--accent); letter-spacing: .14em; }
+  header h1 .brand-bots  { color: var(--accent-2); letter-spacing: .14em; }
+  header h1 .brand-sep   { color: var(--ink-dim); margin: 0 4px; font-weight: 400; }
+  header h1 .brand-sub   { color: var(--ink-dim); letter-spacing: .25em; font-weight: 500; font-size: 11px; }
+  header .spacer { flex: 1; }
+  header .controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  header button, header select, header input[type=file] {
+    background: var(--panel-2); color: var(--ink); border: 1px solid #2b3144;
+    padding: 6px 10px; border-radius: 6px; font-size: 13px; cursor: pointer;
+  }
+  header button:hover { border-color: var(--accent); }
+  header button:disabled { opacity: .4; cursor: default; }
+  header .step-indicator { font-variant-numeric: tabular-nums; color: var(--ink-dim); min-width: 110px; }
+  header input[type=range] { width: 260px; accent-color: var(--accent); }
+
+  main {
+    display: grid;
+    grid-template-columns: minmax(640px, 1fr) 440px;
+    height: calc(100vh - 49px);
+  }
+  body.crisis-mode main { grid-template-columns: minmax(560px, 1fr) 360px; }
+  body.crisis-mode aside section { padding: 10px 12px; }
+  body.crisis-mode aside h2 { font-size: 10px; margin-bottom: 6px; }
+
+  /* LEFT: table */
+  .table-area {
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+    overflow: hidden;
+  }
+  .table-shell {
+    position: relative;
+    width: min(900px, 92%);
+    aspect-ratio: 1.55 / 1;
+    border-radius: 50% / 50%;
+    background: var(--rail);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5), inset 0 0 0 8px var(--rail-hi);
+    padding: 28px;
+    transition: width .28s ease, padding .28s ease, box-shadow .22s ease;
+  }
+  .table-shell.crisis-compact {
+    width: min(760px, 82%);
+    padding: 22px;
+  }
+  .felt {
+    position: relative;
+    width: 100%; height: 100%;
+    border-radius: 50% / 50%;
+    background:
+      radial-gradient(ellipse at 50% 40%, var(--felt-a) 0%, var(--felt-b) 75%);
+    box-shadow: inset 0 0 60px rgba(0,0,0,0.55), inset 0 0 0 2px rgba(255,255,255,0.04);
+    overflow: visible;
+  }
+  .board-row {
+    position: absolute;
+    left: 50%; top: 38%;
+    transform: translate(-50%, -50%);
+    display: flex; gap: 10px;
+    z-index: 14;
+  }
+  .pot {
+    position: absolute;
+    left: 50%; top: 60%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    z-index: 14;
+  }
+  .pot .label { font-size: 11px; color: var(--ink-dim); letter-spacing: .2em; }
+  .pot .amount { font-size: 28px; font-weight: 700; color: var(--accent); }
+  .table-shell.crisis-compact .board-row { gap: 7px; }
+  .table-shell.crisis-compact .pot .label { font-size: 9px; }
+  .table-shell.crisis-compact .pot .amount { font-size: 21px; }
+
+  .card {
+    width: 54px; height: 78px;
+    border-radius: 8px; background: #fafbfd;
+    color: #111;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-weight: 700;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.35);
+    font-family: "SF Pro Display", system-ui;
+    position: relative;
+  }
+  .card.red { color: #cc1e2f; }
+  .card .rank { font-size: 22px; line-height: 1; }
+  .card .suit { font-size: 18px; line-height: 1; margin-top: 2px; }
+  .card.back {
+    background: repeating-linear-gradient(45deg, #2a3a7a 0 6px, #1b2656 6px 12px);
+    color: transparent;
+  }
+  .card.hidden { visibility: hidden; }
+  .card.small { width: 36px; height: 52px; }
+  .card.small .rank { font-size: 15px; }
+  .card.small .suit { font-size: 13px; }
+  .table-shell.crisis-compact .card { width: 44px; height: 64px; border-radius: 7px; }
+  .table-shell.crisis-compact .card .rank { font-size: 18px; }
+  .table-shell.crisis-compact .card .suit { font-size: 15px; }
+  .table-shell.crisis-compact .card.small { width: 28px; height: 41px; border-radius: 6px; }
+  .table-shell.crisis-compact .card.small .rank { font-size: 12px; }
+  .table-shell.crisis-compact .card.small .suit { font-size: 11px; }
+
+  /* Seats around the table */
+  .seat {
+    position: absolute;
+    width: 220px;
+    transform: translate(-50%, -50%);
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    z-index: 16;
+  }
+  .table-shell.crisis-compact .seat { width: 168px; gap: 4px; }
+  .seat-0 { left: 18%; top: 25%; }
+  .seat-1 { left: 82%; top: 25%; }
+  .seat-2 { left: 82%; top: 75%; }
+  .seat-3 { left: 18%; top: 75%; }
+  .seat-4 { left: 50%; top: 13%; }
+  .seat-5 { left: 50%; top: 87%; }
+
+  .seat .plate {
+    width: 100%;
+    padding: 8px 10px;
+    background: rgba(10, 14, 22, 0.82);
+    border-radius: 10px;
+    border: 2px solid rgba(255,255,255,0.06);
+    display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; align-items: center;
+    transition: border-color .15s, box-shadow .15s, opacity .2s;
+  }
+  .table-shell.crisis-compact .seat .plate {
+    padding: 5px 7px;
+    border-width: 1px;
+    border-radius: 7px;
+    gap: 2px 6px;
+    background: rgba(10, 14, 22, 0.70);
+  }
+  .seat.folded .plate { opacity: .45; }
+  .seat.allin .plate { border-color: var(--red); }
+  .seat.actor .plate {
+    border-color: var(--actor);
+    box-shadow: 0 0 0 3px rgba(255, 211, 106, 0.25), 0 6px 20px rgba(255, 211, 106, 0.2);
+  }
+  .seat.crisis-detected .plate { border-color: #ff9d42; }
+  .seat.crisis-warning .plate { border-color: #ffca61; box-shadow: 0 0 0 3px rgba(255, 176, 64, 0.20); }
+  .seat.crisis-verifying .plate { border-color: #6c8dff; }
+  .seat.crisis-evacuating .plate,
+  .seat.crisis-stood_up .plate { border-color: #4ad47a; box-shadow: 0 0 0 3px rgba(74, 212, 122, 0.18); }
+  .seat.crisis-delayed .plate {
+    border-color: #ff5a4f;
+    box-shadow: 0 0 0 3px rgba(255, 62, 48, 0.25), 0 0 22px rgba(255, 46, 32, 0.36);
+    animation: danger-pulse 820ms ease-in-out infinite alternate;
+  }
+  .seat.crisis-rescued .plate { border-color: #8be9fd; box-shadow: 0 0 0 3px rgba(139, 233, 253, 0.18); }
+  .seat.crisis-exited .plate { opacity: .58; border-color: #4ad47a; }
+  .seat.crisis-injured .plate { border-color: #ff3131; background: rgba(60, 0, 0, 0.9); }
+  .seat.crisis-trapped .plate,
+  .seat.crisis-engulfed .plate { border-color: #ff3131; background: rgba(60, 0, 0, 0.9); }
+  .seat.crisis-fatal .plate {
+    border-color: #ff3131;
+    background: rgba(18, 0, 0, 0.96);
+    box-shadow: 0 0 0 3px rgba(255, 49, 49, .35), 0 0 24px rgba(255, 49, 49, .45);
+  }
+  .seat.crisis-hesitating .plate { border-color: #ffd36a; }
+  .seat.crisis-clinging_to_stack .plate { border-color: #ff9d42; box-shadow: 0 0 0 3px rgba(255, 157, 66, .18); }
+  .seat.crisis-tempted_by_chips .plate { border-color: #f47cb0; box-shadow: 0 0 0 3px rgba(244, 124, 176, .22); }
+  .seat .badge { font-size: 18px; width: 32px; height: 32px; border-radius: 50%;
+    display: grid; place-items: center; background: #0c0e14; border: 2px solid currentColor; }
+  .table-shell.crisis-compact .seat .badge { width: 24px; height: 24px; font-size: 13px; border-width: 1.5px; }
+  .seat-0 .badge { color: var(--seat-0); }
+  .seat-1 .badge { color: var(--seat-1); }
+  .seat-2 .badge { color: var(--seat-2); }
+  .seat-3 .badge { color: var(--seat-3); }
+  .seat-4 .badge { color: var(--seat-4); }
+  .seat-5 .badge { color: var(--seat-5); }
+  .seat .who { display: flex; flex-direction: column; }
+  .seat .name { font-weight: 600; font-size: 13px; }
+  .seat .persona { font-size: 11px; color: var(--ink-dim); }
+  .table-shell.crisis-compact .seat .name { font-size: 10px; }
+  .table-shell.crisis-compact .seat .persona { font-size: 9px; }
+  .seat .stack-row {
+    grid-column: 1 / -1;
+    display: flex; justify-content: space-between; font-variant-numeric: tabular-nums;
+    border-top: 1px dashed rgba(255,255,255,0.08);
+    padding-top: 4px; font-size: 12px;
+  }
+  .table-shell.crisis-compact .seat .stack-row { padding-top: 2px; font-size: 10px; }
+  .seat .stack-row .chips { color: var(--accent); font-weight: 700; }
+  .seat .committed { color: var(--ink-dim); }
+  .seat .committed b { color: var(--ink); }
+
+  .seat .hole {
+    display: flex; gap: 6px; margin-top: 2px;
+  }
+  .table-shell.crisis-compact .seat .hole { gap: 4px; }
+  .seat .action-pill {
+    padding: 3px 8px; border-radius: 999px; font-size: 11px; letter-spacing: .08em;
+    background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1);
+    font-weight: 600;
+  }
+  .table-shell.crisis-compact .seat .action-pill {
+    padding: 2px 6px;
+    font-size: 9px;
+  }
+  .seat .action-pill.fold { color: var(--fold); border-color: var(--fold); }
+  .seat .action-pill.call, .seat .action-pill.check { color: var(--accent-2); border-color: var(--accent-2); }
+  .seat .action-pill.bet, .seat .action-pill.raise { color: var(--green); border-color: var(--green); }
+  .seat .action-pill.all_in { color: var(--red); border-color: var(--red); }
+
+  .crisis-chip {
+    grid-column: 1 / -1;
+    display: inline-flex; justify-content: space-between; align-items: center; gap: 8px;
+    width: 100%;
+    min-height: 22px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.08);
+    color: var(--ink);
+    border: 1px solid rgba(255,255,255,0.12);
+    font-size: 10px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .table-shell.crisis-compact .crisis-chip {
+    min-height: 18px;
+    padding: 2px 6px;
+    font-size: 8.5px;
+    border-radius: 5px;
+  }
+  .crisis-chip .belief { color: var(--ink-dim); font-variant-numeric: tabular-nums; letter-spacing: 0; }
+  .crisis-chip.detected, .crisis-chip.warning { color: #ffd08a; border-color: rgba(255, 190, 91, .55); }
+  .crisis-chip.verifying { color: #9fb4ff; border-color: rgba(108, 141, 255, .55); }
+  .crisis-chip.evacuating, .crisis-chip.exited, .crisis-chip.stood_up { color: #8dffb3; border-color: rgba(74, 212, 122, .55); }
+  .crisis-chip.delayed, .crisis-chip.injured { color: #ff8d86; border-color: rgba(255, 89, 80, .7); }
+  .crisis-chip.rescued { color: #9df2ff; border-color: rgba(139, 233, 253, .6); }
+  .crisis-chip.hesitating { color: #ffd36a; border-color: rgba(255, 211, 106, .45); }
+  .crisis-chip.clinging_to_stack { color: #ffb36d; border-color: rgba(255, 157, 66, .58); }
+  .crisis-chip.tempted_by_chips { color: #ff9ed0; border-color: rgba(244, 124, 176, .62); }
+  .crisis-chip.trapped, .crisis-chip.engulfed { color: #ff8d86; border-color: rgba(255, 89, 80, .7); }
+  .crisis-chip.fatal { color: #ff5a4f; border-color: rgba(255, 49, 49, .86); background: rgba(70, 0, 0, .50); }
+
+  .agent-doll {
+    display: block;
+    position: absolute;
+    width: 18px;
+    height: 28px;
+    z-index: 23;
+    pointer-events: none;
+    --exit-x: -86px;
+    --exit-y: -42px;
+    transform: translate(-50%, -50%) scale(.86);
+    transform-origin: 50% 88%;
+    filter: drop-shadow(0 4px 5px rgba(0,0,0,.55));
+    opacity: .74;
+    transition: transform 120ms ease, opacity 120ms ease;
+  }
+  .table-shell:not(.crisis-compact) .agent-doll {
+    transform: translate(-50%, -50%) scale(.72);
+    z-index: 14;
+  }
+  .table-shell.crisis-compact .agent-doll {
+    opacity: 1;
+    z-index: 23;
+  }
+  .agent-doll .head {
+    position: absolute;
+    left: 50%; top: 0;
+    width: 12px; height: 12px;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    background: #f2d7b8;
+    border: 1px solid rgba(0,0,0,.32);
+  }
+  .agent-doll .torso {
+    position: absolute;
+    left: 50%; top: 11px;
+    width: 14px; height: 13px;
+    transform: translateX(-50%);
+    border-radius: 6px 6px 4px 4px;
+    background: currentColor;
+    box-shadow: inset 0 -5px 0 rgba(0,0,0,.18);
+  }
+  .agent-doll::before,
+  .agent-doll::after {
+    content: "";
+    position: absolute;
+    top: 22px;
+    width: 7px; height: 5px;
+    border-radius: 5px;
+    background: currentColor;
+    opacity: .92;
+  }
+  .agent-doll::before { left: 1px; transform: rotate(12deg); }
+  .agent-doll::after { right: 1px; transform: rotate(-12deg); }
+  .seat-0 .agent-doll { left: 78%; top: 101%; }
+  .seat-1 .agent-doll { left: 22%; top: 101%; }
+  .seat-2 .agent-doll { left: 22%; top: -2%; }
+  .seat-3 .agent-doll { left: 78%; top: -2%; }
+  .seat-4 .agent-doll { left: 50%; top: 104%; }
+  .seat-5 .agent-doll { left: 50%; top: -4%; }
+  .seat-0 .agent-doll, .seat-1 .agent-doll, .seat-4 .agent-doll { --sit-y: 0px; }
+  .seat-2 .agent-doll, .seat-3 .agent-doll, .seat-5 .agent-doll { --sit-y: 3px; }
+  .seat-0 .agent-doll, .seat-1 .agent-doll { --exit-y: -62px; }
+  .seat-2 .agent-doll, .seat-3 .agent-doll, .seat-5 .agent-doll { --exit-y: 58px; }
+  .seat-0 .agent-doll, .seat-2 .agent-doll, .seat-4 .agent-doll, .seat-5 .agent-doll { --exit-x: -92px; }
+  .seat-1 .agent-doll, .seat-3 .agent-doll { --exit-x: -118px; }
+  .agent-doll.evacuating,
+  .agent-doll.stood_up,
+  .agent-doll.rescued { transition: transform 90ms linear, opacity 90ms linear; }
+  .agent-doll.delayed {
+    animation: doll-hesitate 520ms ease-in-out infinite alternate;
+  }
+  .agent-doll.hesitating,
+  .agent-doll.clinging_to_stack,
+  .agent-doll.tempted_by_chips,
+  .agent-doll.engulfed {
+    animation: doll-hesitate 520ms ease-in-out infinite alternate;
+  }
+  .agent-doll.engulfed {
+    filter: drop-shadow(0 0 10px rgba(255, 70, 40, .85));
+  }
+  .agent-doll.exited,
+  .agent-doll.injured,
+  .agent-doll.trapped {
+    opacity: 0;
+  }
+  .table-shell.crisis-compact .agent-doll.exited,
+  .table-shell.crisis-compact .agent-doll.injured,
+  .table-shell.crisis-compact .agent-doll.trapped {
+    opacity: 0;
+  }
+  .agent-doll.fatal {
+    opacity: .42;
+    transform: translate(-50%, -50%) scale(.86) rotate(88deg);
+    transform-origin: 50% 78%;
+    filter: grayscale(1) brightness(.72) drop-shadow(0 0 10px rgba(255, 45, 32, .70));
+    animation: none;
+  }
+  .table-shell.crisis-compact .agent-doll.fatal {
+    opacity: .42;
+  }
+  @keyframes doll-hesitate {
+    from { transform: translate(-50%, -50%) scale(.86) rotate(-4deg); }
+    to { transform: translate(-50%, -58%) scale(.94) rotate(4deg); }
+  }
+
+  .button-token, .dealer-token {
+    position: absolute; left: 50%; top: -8px; transform: translateX(-50%);
+    background: #fff; color: #222; font-weight: 800; font-size: 10px;
+    width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,.4);
+  }
+
+  .fire-overlay {
+    position: absolute;
+    inset: -18%;
+    border-radius: 12px;
+    pointer-events: none;
+    z-index: 18;
+    opacity: 0;
+    --safe-radius: 78%;
+    --storm-alpha: 0;
+    --storm-edge-alpha: 0;
+    --storm-core-alpha: 0;
+    --safe-ring-alpha: 0;
+    --fire-glow-alpha: 0;
+    --engulf-alpha: 0;
+    --storm-scale: 1;
+    transition: opacity .22s ease;
+  }
+  .table-shell.fire-active .fire-overlay { opacity: 1; }
+  .fire-overlay::before,
+  .fire-overlay::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+  }
+  .fire-overlay::before {
+    /* Multi-layer flame palette: white core → yellow → orange → red → dark red → charred → smoke.
+       Stops are anchored to --safe-radius so the safe zone remains a clean disk while the
+       outer band reads as actual fire rather than a flat red ring. */
+    background:
+      linear-gradient(
+        rgba(126, 18, 12, var(--engulf-alpha)),
+        rgba(88, 12, 10, var(--engulf-alpha))),
+      radial-gradient(circle at 50% 50%,
+        rgba(255, 80, 54, 0) 0 var(--safe-radius),
+        rgba(255, 252, 224, var(--safe-ring-alpha)) calc(var(--safe-radius) + 0.4%),
+        rgba(255, 232, 138, calc(var(--storm-edge-alpha) * 1.05)) calc(var(--safe-radius) + 1.6%),
+        rgba(255, 168, 56, var(--storm-edge-alpha)) calc(var(--safe-radius) + 3.2%),
+        rgba(238, 78, 28, var(--storm-alpha)) calc(var(--safe-radius) + 6.5%),
+        rgba(150, 18, 10, var(--storm-alpha)) 78%,
+        rgba(48, 14, 10, var(--storm-core-alpha)) 92%,
+        rgba(20, 16, 22, calc(var(--storm-core-alpha) * 0.92)) 100%);
+    transform: scale(var(--storm-scale));
+    filter: saturate(1.28);
+    mix-blend-mode: normal;
+  }
+  .fire-overlay::after {
+    /* Hot inner halo: pale yellow rim hugging the safe zone, fading into orange just beyond.
+       Layered above ::before so the boundary between safe/fire reads sharp and lit. */
+    background:
+      radial-gradient(circle at 50% 50%,
+        transparent 0 calc(var(--safe-radius) - 1.2%),
+        rgba(255, 255, 240, calc(var(--safe-ring-alpha) * .65)) calc(var(--safe-radius) - .6%),
+        rgba(255, 210, 110, calc(var(--storm-edge-alpha) * .82)) var(--safe-radius),
+        rgba(255, 120, 56, calc(var(--storm-edge-alpha) * .55)) calc(var(--safe-radius) + 2.2%),
+        transparent calc(var(--safe-radius) + 5.5%));
+    transform: scale(var(--storm-scale));
+    filter: blur(.6px);
+    mix-blend-mode: screen;
+  }
+  /* Irregular flicker on both layers — separate timings so they don't beat in sync.
+     The animation rides on top of the per-frame --storm-scale set by JS, multiplying it
+     so we don't fight the pressure-driven shrink. */
+  .table-shell.fire-active .fire-overlay::before {
+    animation: flame-flicker-a 1.35s ease-in-out infinite alternate;
+  }
+  .table-shell.fire-active .fire-overlay::after {
+    animation: flame-flicker-b 0.92s ease-in-out infinite alternate;
+  }
+  @keyframes flame-flicker-a {
+    0%   { filter: saturate(1.22) brightness(0.96); }
+    23%  { filter: saturate(1.34) brightness(1.12); }
+    41%  { filter: saturate(1.18) brightness(0.92); }
+    62%  { filter: saturate(1.40) brightness(1.18); }
+    83%  { filter: saturate(1.24) brightness(1.02); }
+    100% { filter: saturate(1.32) brightness(1.10); }
+  }
+  @keyframes flame-flicker-b {
+    0%   { filter: blur(.5px) brightness(1.00); opacity: .92; }
+    34%  { filter: blur(.8px) brightness(1.18); opacity: 1.00; }
+    58%  { filter: blur(.4px) brightness(0.94); opacity: .88; }
+    77%  { filter: blur(.7px) brightness(1.22); opacity: 1.00; }
+    100% { filter: blur(.6px) brightness(1.08); opacity: .96; }
+  }
+  /* Flame tongues: 12 SVG paths licking inward from the storm edge. JS rewrites their `d`
+     each animation frame using sin-based amplitude so the boundary stops looking circular. */
+  .fire-overlay .fire-tongues {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: visible;
+    mix-blend-mode: screen;
+    opacity: var(--tongue-opacity, 0);
+    transition: opacity .22s ease;
+    filter: blur(.4px);
+  }
+  .fire-overlay .fire-tongues path {
+    fill: url(#fire-tongue-grad);
+  }
+  .table-shell.fire-active {
+    box-shadow:
+      0 20px 60px rgba(0,0,0,0.5),
+      inset 0 0 0 8px var(--rail-hi),
+      0 0 70px rgba(228, 68, 68, var(--fire-glow-alpha));
+  }
+
+  .fire-source, .crisis-banner {
+    position: absolute;
+    z-index: 24;
+    pointer-events: none;
+    border-radius: 6px;
+    font-size: 10px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    font-weight: 800;
+    box-shadow: 0 8px 20px rgba(0,0,0,.35);
+  }
+  .fire-source {
+    right: -3%;
+    top: 48%;
+    padding: 6px 9px;
+    background: rgba(57, 5, 2, .95);
+    color: #ffb0a9;
+    border: 1px solid rgba(255, 89, 80, .72);
+  }
+  .crisis-banner {
+    left: 50%;
+    top: -18px;
+    transform: translateX(-50%);
+    padding: 7px 12px;
+    background: rgba(18, 4, 3, .94);
+    color: #ffd0a1;
+    border: 1px solid rgba(255, 120, 65, .58);
+    min-width: 260px;
+    text-align: center;
+  }
+  @keyframes danger-pulse {
+    from { filter: brightness(1); }
+    to { filter: brightness(1.35); }
+  }
+
+  /* Speech bubble for current table_talk.
+     Anchored vertically (above/below the seat plate) rather than laterally,
+     so a 6-seat layout never gets one player's bubble covering the
+     adjacent seat. Width is capped to the plate's horizontal footprint. */
+  .bubble {
+    position: absolute; max-width: 220px; min-width: 140px;
+    background: #fffdf4;
+    color: #141821;
+    padding: 9px 12px;
+    border-radius: 12px;
+    font-size: 13px; line-height: 1.5; font-weight: 500;
+    letter-spacing: 0.01em;
+    box-shadow: 0 8px 22px rgba(0,0,0,0.6), 0 0 0 2px rgba(245,196,81,0.55);
+    z-index: 20;
+    pointer-events: none;
+    animation: bubble-pop 180ms ease-out;
+  }
+  .bubble .who {
+    display: block;
+    font-size: 10px; letter-spacing: .18em;
+    color: #8a6e2b;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+  .bubble::after {
+    content: ""; position: absolute;
+    width: 0; height: 0; border: 10px solid transparent;
+  }
+  /* All bubbles drop above/below the seat plate (never lateral) so they
+     stay within the seat's horizontal footprint and don't bleed onto
+     adjacent seats — critical for the 6-seat layout where corners and
+     centers sit close together. */
+  .seat-0 .bubble { top: calc(100% + 12px); left: 0; }
+  .seat-0 .bubble::after { top: -18px; left: 32px; border-bottom-color: #fffdf4; }
+  .seat-1 .bubble { top: calc(100% + 12px); right: 0; }
+  .seat-1 .bubble::after { top: -18px; right: 32px; border-bottom-color: #fffdf4; }
+  .seat-2 .bubble { bottom: calc(100% + 12px); right: 0; }
+  .seat-2 .bubble::after { bottom: -18px; right: 32px; border-top-color: #fffdf4; }
+  .seat-3 .bubble { bottom: calc(100% + 12px); left: 0; }
+  .seat-3 .bubble::after { bottom: -18px; left: 32px; border-top-color: #fffdf4; }
+  .seat-4 .bubble { top: calc(100% + 12px); left: 0; }
+  .seat-4 .bubble::after { top: -18px; left: 32px; border-bottom-color: #fffdf4; }
+  .seat-5 .bubble { bottom: calc(100% + 12px); left: 0; }
+  .seat-5 .bubble::after { bottom: -18px; left: 32px; border-top-color: #fffdf4; }
+  @keyframes bubble-pop {
+    from { opacity: 0; transform: translateY(-6px) scale(0.96); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .hand-banner {
+    position: absolute; top: 16px; left: 16px;
+    background: rgba(0,0,0,0.5); color: var(--ink); padding: 6px 14px;
+    border-radius: 999px; font-size: 12px; letter-spacing: .1em;
+    border: 1px solid rgba(255,255,255,0.08);
+    z-index: 18;
+  }
+
+  /* RIGHT: side panel */
+  aside {
+    background: var(--panel);
+    border-left: 1px solid #1e2230;
+    overflow-y: auto;
+  }
+  aside section {
+    padding: 14px 16px;
+    border-bottom: 1px solid #1e2230;
+  }
+  aside h2 {
+    font-size: 11px; letter-spacing: .2em; color: var(--ink-dim);
+    font-weight: 600; margin: 0 0 8px 0; text-transform: uppercase;
+  }
+  .action-summary {
+    display: grid; grid-template-columns: auto 1fr; gap: 4px 10px;
+    font-size: 13px; font-variant-numeric: tabular-nums;
+  }
+  .action-summary .k { color: var(--ink-dim); }
+  .action-summary .v { color: var(--ink); font-weight: 500; }
+  .action-summary .verb { font-weight: 700; font-size: 16px; letter-spacing: .1em; }
+  .verb.fold { color: var(--fold); }
+  .verb.call, .verb.check { color: var(--accent-2); }
+  .verb.bet, .verb.raise { color: var(--green); }
+  .verb.all_in { color: var(--red); }
+
+  .crisis-panel {
+    display: flex; flex-direction: column; gap: 10px;
+    font-size: 12px;
+  }
+  .crisis-panel .headline {
+    background: rgba(228, 68, 68, .12);
+    border-left: 3px solid var(--red);
+    padding: 9px 11px;
+    border-radius: 6px;
+    line-height: 1.45;
+  }
+  .crisis-panel .headline b { color: #ffb0a9; }
+  .crisis-panel .row {
+    display: grid; grid-template-columns: auto 1fr; gap: 5px 10px;
+    font-variant-numeric: tabular-nums;
+  }
+  .crisis-panel .k { color: var(--ink-dim); }
+  .crisis-panel .v { color: var(--ink); font-weight: 600; }
+  .crisis-panel .danger-meter {
+    height: 8px; border-radius: 999px; background: #232838; overflow: hidden;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
+  }
+  .crisis-panel .danger-meter span {
+    display: block; height: 100%;
+    background: linear-gradient(90deg, #ffd36a, #ff7840, #e44);
+  }
+  .crisis-panel .chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .crisis-panel .chip {
+    padding: 3px 7px; border-radius: 999px;
+    background: #232838; color: var(--ink-dim);
+    border: 1px solid rgba(255,255,255,.08);
+  }
+  .crisis-panel .chip.bad { color: #ff9a92; border-color: rgba(255, 89, 80, .55); background: rgba(228, 68, 68, .12); }
+  .crisis-panel .chip.good { color: #8dffb3; border-color: rgba(74, 212, 122, .45); background: rgba(74, 212, 122, .10); }
+  .crisis-panel .chip.warn { color: #ffd36a; border-color: rgba(255, 211, 106, .45); background: rgba(245,196,81,.10); }
+  .crisis-panel .drivers {
+    display: grid;
+    gap: 5px;
+    padding-top: 2px;
+  }
+  .crisis-panel .driver {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 7px;
+    align-items: center;
+    padding: 5px 7px;
+    border-radius: 6px;
+    background: rgba(255,255,255,.055);
+    color: var(--ink-dim);
+    font-variant-numeric: tabular-nums;
+  }
+  .crisis-panel .driver b { color: var(--ink); }
+
+  .inner-voice {
+    background: rgba(108, 141, 255, 0.08);
+    border-left: 3px solid var(--accent-2);
+    padding: 10px 12px; border-radius: 6px; line-height: 1.6; font-style: italic;
+    margin-bottom: 8px;
+  }
+  .inner-voice::before { content: "心 "; color: var(--accent-2); font-style: normal; font-weight: 700; }
+
+  .psych-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px; }
+  .psych-grid .cell { background: var(--panel-2); padding: 8px 10px; border-radius: 6px; }
+  .psych-grid .label { color: var(--ink-dim); font-size: 11px; text-transform: uppercase; letter-spacing: .1em; }
+  .psych-grid .value { margin-top: 4px; font-weight: 600; }
+  .meter { height: 6px; border-radius: 3px; background: #232838; margin-top: 6px; overflow: hidden; }
+  .meter > span { display: block; height: 100%; background: linear-gradient(90deg, var(--accent-2), var(--accent)); }
+  .meter.tilt > span { background: linear-gradient(90deg, #4ad47a, #e44); }
+  .reads-list { font-size: 12px; line-height: 1.6; }
+  .reads-list div { display: flex; gap: 6px; }
+  .reads-list .seat-tag { font-weight: 700; min-width: 18px; }
+
+  .session-memory { display: flex; flex-direction: column; gap: 8px; }
+  .session-memory .empty { color: var(--ink-dim); font-size: 12px; }
+  .session-card {
+    background: var(--panel-2); border-radius: 8px; padding: 10px 12px;
+    border-left: 3px solid var(--ink-dim); font-size: 12px; line-height: 1.5;
+  }
+  .session-card.seat-0 { border-left-color: var(--seat-0); }
+  .session-card.seat-1 { border-left-color: var(--seat-1); }
+  .session-card.seat-2 { border-left-color: var(--seat-2); }
+  .session-card.seat-3 { border-left-color: var(--seat-3); }
+  .session-card.seat-4 { border-left-color: var(--seat-4); }
+  .session-card.seat-5 { border-left-color: var(--seat-5); }
+  .session-card .head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 6px;
+  }
+  .session-card .who { font-weight: 700; color: var(--ink); }
+  .session-card .mood { color: var(--accent); font-size: 11px; letter-spacing: .05em; }
+  .session-card .tilt-row {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11px; color: var(--ink-dim); margin-bottom: 6px;
+  }
+  .session-card .tilt-row .meter { flex: 1; margin-top: 0; }
+  .session-card .tilt-row .num { font-variant-numeric: tabular-nums; min-width: 32px; text-align: right; }
+  .session-card .outcomes {
+    display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 6px;
+  }
+  .session-card .outcome-pill {
+    font-size: 10px; padding: 2px 6px; border-radius: 10px;
+    background: #232838; color: var(--ink-dim);
+  }
+  .session-card .outcome-pill.win { background: rgba(74,212,122,0.18); color: var(--green); }
+  .session-card .outcome-pill.loss { background: rgba(228,68,68,0.18); color: #ff8a8a; }
+  .session-card .rivalry {
+    border-top: 1px dashed #2b3144; padding-top: 6px; margin-top: 6px;
+    color: var(--ink); font-size: 11.5px;
+  }
+  .session-card .rivalry .opp { color: var(--accent-2); font-weight: 600; }
+  .session-card .rivalry .kind {
+    display: inline-block; font-size: 9px; letter-spacing: .12em;
+    padding: 1px 5px; border-radius: 4px; margin-left: 4px; vertical-align: middle;
+    background: #1a1f2c; color: var(--ink-dim); text-transform: uppercase;
+  }
+  .session-card .rivalry .kind.bluffed_me { background: rgba(228,68,68,0.18); color: #ff8a8a; }
+  .session-card .rivalry .kind.shown_strong { background: rgba(245,196,81,0.18); color: var(--accent); }
+  .session-card .rivalry .kind.i_beat_them { background: rgba(74,212,122,0.18); color: var(--green); }
+
+  .talk-feed { display: flex; flex-direction: column; gap: 6px; max-height: 280px; overflow-y: auto; }
+  .talk-feed .talk {
+    background: var(--panel-2); border-radius: 8px; padding: 8px 10px; font-size: 12px;
+    border-left: 3px solid var(--ink-dim);
+    line-height: 1.5;
+  }
+  .talk .who { font-weight: 700; margin-right: 6px; }
+  .talk .when { color: var(--ink-dim); font-size: 11px; margin-left: auto; }
+  .talk .head { display: flex; align-items: center; gap: 4px; margin-bottom: 4px; }
+  .talk.seat-0 { border-color: var(--seat-0); }
+  .talk.seat-1 { border-color: var(--seat-1); }
+  .talk.seat-2 { border-color: var(--seat-2); }
+  .talk.seat-3 { border-color: var(--seat-3); }
+  .talk.seat-4 { border-color: var(--seat-4); }
+  .talk.seat-5 { border-color: var(--seat-5); }
+
+  .mini-voices { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .mini-voice {
+    padding: 8px 10px; border-radius: 8px; background: var(--panel-2);
+    border-top: 3px solid transparent;
+    font-size: 12px; line-height: 1.45;
+  }
+  .mini-voice.seat-0 { border-top-color: var(--seat-0); }
+  .mini-voice.seat-1 { border-top-color: var(--seat-1); }
+  .mini-voice.seat-2 { border-top-color: var(--seat-2); }
+  .mini-voice.seat-3 { border-top-color: var(--seat-3); }
+  .mini-voice.seat-4 { border-top-color: var(--seat-4); }
+  .mini-voice.seat-5 { border-top-color: var(--seat-5); }
+  .mini-voice .head { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-dim); margin-bottom: 4px; }
+  .mini-voice .head b { color: var(--ink); }
+
+  /* Bottom commentary ticker (Pokemon-battle-style real-time hype) */
+  body.has-commentary main { height: calc(100vh - 49px - 116px); }
+  .commentary-bar {
+    position: fixed; left: 0; right: 0; bottom: 0; height: 116px;
+    background: linear-gradient(180deg, rgba(15,17,23,0) 0%, rgba(12,14,20,0.95) 35%, #0a0c12 100%);
+    border-top: 2px solid var(--accent);
+    display: none;
+    align-items: center;
+    padding: 12px 24px;
+    z-index: 10;
+    box-shadow: 0 -10px 30px rgba(0,0,0,0.7);
+    overflow: hidden;
+  }
+  body.has-commentary .commentary-bar { display: flex; }
+  .commentary-bar .label {
+    font-size: 10px; letter-spacing: .28em;
+    color: #1a1200; font-weight: 800;
+    margin-right: 16px; padding: 5px 11px;
+    background: var(--accent); border-radius: 4px;
+    flex: none;
+    text-transform: uppercase;
+    box-shadow: 0 0 12px rgba(245,196,81,0.45);
+    align-self: flex-start;
+    margin-top: 4px;
+  }
+  .commentary-bar .text {
+    font-size: 15px; color: var(--ink); font-weight: 600;
+    line-height: 1.5; flex: 1;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    /* Clamp to 3 lines so a verbose LLM never spills out of the bar. */
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    max-height: calc(1.5em * 3);
+  }
+  .commentary-bar .text.live { animation: commentary-pop 320ms cubic-bezier(.2,.8,.2,1); }
+  .commentary-bar .empty { color: var(--ink-dim); font-style: italic; font-size: 13px; font-weight: 400; }
+  @keyframes commentary-pop {
+    from { opacity: 0; transform: translateY(10px) scale(0.98); }
+    to { opacity: 1; transform: none; }
+  }
+
+  .commentary-archive {
+    display: flex; flex-direction: column; gap: 6px;
+    max-height: 280px; overflow-y: auto;
+  }
+  .commentary-archive .row {
+    background: var(--panel-2); border-left: 3px solid var(--accent);
+    border-radius: 6px; padding: 8px 10px;
+    font-size: 12px; line-height: 1.5; white-space: pre-wrap;
+  }
+  .commentary-archive .row.current {
+    border-left-color: var(--red);
+    box-shadow: 0 0 0 1px rgba(228,68,68,0.4);
+  }
+  .commentary-archive .meta {
+    font-size: 10px; color: var(--ink-dim); letter-spacing: .12em;
+    margin-bottom: 3px; text-transform: uppercase;
+  }
+
+  .empty-state {
+    display: grid; place-items: center; text-align: center;
+    height: 100%; padding: 40px;
+    color: var(--ink-dim); line-height: 1.8;
+  }
+  .empty-state button { margin-top: 14px; padding: 10px 18px; font-size: 15px; background: var(--accent); color: #1a1200; border: 0; border-radius: 8px; font-weight: 700; cursor: pointer; }
+  .empty-state code { background: #000; padding: 2px 6px; border-radius: 4px; color: var(--accent); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>
+    <span class="brand-mark" aria-hidden="true"></span>
+    <span class="brand-bluff">ALL-IN</span><span class="brand-bots">SMOKE</span>
+    <span class="brand-sep">·</span>
+    <span class="brand-sub">REPLAY</span>
+  </h1>
+  <div class="controls">
+    <input type="file" id="file-picker" accept=".jsonl" multiple />
+    <select id="seed-select" hidden></select>
+    <button id="btn-first" title="最初から (Home)">⏮</button>
+    <button id="btn-prev"  title="前のステップ (←)">◀︎</button>
+    <button id="btn-play"  title="再生/停止 (Space)">▶︎</button>
+    <button id="btn-next"  title="次のステップ (→)">▶</button>
+    <button id="btn-last"  title="最後へ (End)">⏭</button>
+    <label style="font-size:11px;color:var(--ink-dim);">速度
+      <select id="speed">
+        <option value="2000">0.5×</option>
+        <option value="1000" selected>1×</option>
+        <option value="500">2×</option>
+        <option value="250">4×</option>
+      </select>
+    </label>
+  </div>
+  <span class="spacer"></span>
+  <span class="step-indicator" id="indicator">step 0 / 0</span>
+  <input type="range" id="scrub" min="0" max="0" value="0" />
+</header>
+
+<main>
+  <div class="table-area" id="table-area">
+    <div class="empty-state" id="empty">
+      <div>
+        <div style="font-size:18px;color:var(--ink);">ログファイルを読み込んでください</div>
+        <div>生成コマンド:</div>
+        <div><code>PYTHONPATH=. python tools/poker_run_tournament.py configs/poker_mindsport.yaml --logs out/run.jsonl</code></div>
+        <div>出力された <code>run.seed*.jsonl</code> を選択 (複数シード選択可)</div>
+        <button onclick="document.getElementById('file-picker').click()">run.seed*.jsonl を選ぶ</button>
+      </div>
+    </div>
+    <div class="table-shell" id="table" hidden>
+      <div class="felt">
+        <div class="hand-banner" id="hand-banner"></div>
+        <div class="board-row" id="board"></div>
+        <div class="pot"><div class="label">POT</div><div class="amount" id="pot">0</div></div>
+        <div class="fire-source" id="fire-source" hidden>STORAGE</div>
+        <div class="crisis-banner" id="crisis-banner" hidden></div>
+        <div class="fire-overlay" id="fire-overlay" aria-hidden="true" hidden>
+          <svg class="fire-tongues" id="fire-tongues" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <defs>
+              <radialGradient id="fire-tongue-grad" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="rgba(255, 255, 232, 0)"/>
+                <stop offset="46%" stop-color="rgba(255, 230, 130, 0)"/>
+                <stop offset="62%" stop-color="rgba(255, 180, 60, .85)"/>
+                <stop offset="78%" stop-color="rgba(240, 90, 30, .92)"/>
+                <stop offset="100%" stop-color="rgba(120, 18, 8, 0)"/>
+              </radialGradient>
+            </defs>
+            <g id="fire-tongues-group"></g>
+          </svg>
+        </div>
+        <div class="seat seat-0" data-seat="0"></div>
+        <div class="seat seat-1" data-seat="1"></div>
+        <div class="seat seat-2" data-seat="2"></div>
+        <div class="seat seat-3" data-seat="3"></div>
+        <div class="seat seat-4" data-seat="4"></div>
+        <div class="seat seat-5" data-seat="5"></div>
+      </div>
+    </div>
+  </div>
+
+  <aside id="side" hidden>
+    <section id="s-action">
+      <h2>Step / Action</h2>
+      <div class="action-summary" id="action-summary"></div>
+    </section>
+    <section id="s-crisis" hidden>
+      <h2>Danger / Escape</h2>
+      <div class="crisis-panel" id="crisis-panel"></div>
+    </section>
+    <section id="s-inner">
+      <h2>現アクターの心の声</h2>
+      <div id="current-inner" class="inner-voice"></div>
+      <div class="psych-grid" id="psych-grid"></div>
+    </section>
+    <section id="s-reads">
+      <h2>Reads (対他プレイヤー読み)</h2>
+      <div id="reads" class="reads-list"></div>
+    </section>
+    <section id="s-voices">
+      <h2>各シートの最新 inner_voice</h2>
+      <div id="mini-voices" class="mini-voices"></div>
+    </section>
+    <section id="s-session">
+      <h2>セッション記憶 (因縁とムード)</h2>
+      <div id="session-memory" class="session-memory"></div>
+    </section>
+    <section id="s-commentary" hidden>
+      <h2>実況アーカイブ (現ハンド)</h2>
+      <div id="commentary-archive" class="commentary-archive"></div>
+    </section>
+    <section id="s-talk">
+      <h2>公開発話 (現ハンド)</h2>
+      <div id="talk-feed" class="talk-feed"></div>
+    </section>
+  </aside>
+</main>
+
+<div class="commentary-bar" id="commentary-bar">
+  <span class="label">LIVE 実況</span>
+  <div class="text" id="commentary-text"><span class="empty">(実況なし — commentary jsonl を読み込むと表示)</span></div>
+</div>
+
+<script>
+"use strict";
+
+const SUITS = { s: ["♠","black"], h: ["♥","red"], d: ["♦","red"], c: ["♣","black"] };
+const PERSONA_ICON = {
+  analyst: "🧮", stoic: "🗿", needler: "🪡", showman: "🎭",
+  gambler: "🎰", veteran: "🎖️",
+};
+const SEAT_COUNT = 6;
+const CRISIS_EVENTS = new Set([
+  "crisis_start", "reputation_transfer_input", "smoke_cue_detected",
+  "fire_warning", "warning_belief_update", "bluff_penalty_in_crisis",
+  "evacuation_decision", "smoke_decision", "wrong_exit_delay",
+  "rescue_link", "evacuated", "injury_or_isolation",
+  "showdown_reinterpretation", "enemy_to_rescuer_shift", "crisis_summary",
+  "live_fire_start", "live_fire_tick",
+]);
+const CRISIS_VISUAL_EVENTS = new Set([...CRISIS_EVENTS].filter(e => e !== "reputation_transfer_input"));
+const CRISIS_STAGE_LABEL = {
+  0: "兆し前",
+  1: "兆し / 警告",
+  2: "警報の曖昧さ",
+  3: "煙が見える",
+  4: "避難 / 出口選択",
+  5: "ショーダウン",
+};
+const CRISIS_EVENT_LABEL = {
+  crisis_start: "火災発生条件",
+  smoke_cue_detected: "焦げ臭さに気づく",
+  fire_warning: "警告する",
+  warning_belief_update: "警告を信じる/疑う",
+  bluff_penalty_in_crisis: "ブラフ評判の罰",
+  evacuation_decision: "避難判断",
+  smoke_decision: "煙で再判断",
+  wrong_exit_delay: "出口選択ミス",
+  rescue_link: "救助リンク",
+  evacuated: "避難完了",
+  injury_or_isolation: "逃げ遅れ",
+  showdown_reinterpretation: "意味の再解釈",
+  enemy_to_rescuer_shift: "敵対から救助へ",
+  crisis_summary: "危機の結果",
+};
+const DEFAULT_CRISIS_LOCATIONS = {
+  0: "table_a",
+  1: "table_a",
+  2: "table_b",
+  3: "table_b",
+  4: "table_c",
+  5: "spectators",
+};
+const CRISIS_STATUS_LABEL = {
+  playing: "PLAYING",
+  detected: "NOTICED",
+  warning: "WARNING",
+  doubting: "DOUBT",
+  verifying: "VERIFY",
+  evacuating: "EVAC",
+  stood_up: "STOOD UP",
+  engulfed: "ENGULFED",
+  fatal: "FATAL",
+  delayed: "DELAY",
+  hesitating: "HESITATE",
+  clinging_to_stack: "STAY",
+  tempted_by_chips: "TEMPT",
+  rescued: "RESCUED",
+  exited: "EXITED",
+  trapped: "TRAPPED",
+  injured: "TRAPPED",
+};
+const CRISIS_TWEEN_FRAMES = 5;
+
+const state = {
+  seeds: new Map(), // seedKey -> { events, timeline, agentsBySeat }
+  currentSeed: null,
+  stepIndex: 0, // index into timeline (0..N-1)
+  playTimer: null,
+};
+
+// --------- Parsing -----------
+function parseRunFile(name, text) {
+  const events = [];
+  for (const line of text.split(/\r?\n/)) {
+    const t = line.trim();
+    if (!t) continue;
+    try { events.push(JSON.parse(t)); } catch (e) { console.warn("skip bad line in", name, e); }
+  }
+  return events;
+}
+
+function normalizeGender(value) {
+  if (value == null) return null;
+  const gender = String(value).trim().toLowerCase();
+  if (["male", "m", "man", "men", "男性", "男"].includes(gender)) return "male";
+  if (["female", "f", "woman", "women", "女性", "女"].includes(gender)) return "female";
+  return gender || null;
+}
+
+function agentInfoFromPayload(payload) {
+  if (!payload) return {};
+  return {
+    agent_id: payload.agent_id,
+    persona: personaFromAgentId(payload.agent_id),
+    gender: payload.gender,
+    full_name: payload.full_name,
+  };
+}
+
+function mergeAgentInfo(agentsBySeat, seat, info) {
+  const key = Number(seat);
+  if (!Number.isFinite(key)) return;
+  const current = agentsBySeat[key] || {};
+  const next = { ...current };
+  if (info?.agent_id != null && String(info.agent_id).length) {
+    next.agent_id = String(info.agent_id);
+  }
+  if (info?.persona != null && String(info.persona).length) {
+    next.persona = String(info.persona);
+  } else if (!next.persona && next.agent_id) {
+    next.persona = personaFromAgentId(next.agent_id);
+  }
+  const gender = normalizeGender(info?.gender);
+  if (gender) next.gender = gender;
+  if (info?.full_name != null && String(info.full_name).length) {
+    next.full_name = String(info.full_name);
+  }
+  agentsBySeat[key] = next;
+}
+
+function buildTimelineFromEvents(events) {
+  const agentsBySeat = {};        // seat_id -> { agent_id, persona, gender, full_name }
+  const handStartBySeat = {};     // hand_id -> {stacks, button_seat, hole_cards, small_blind, big_blind}
+  const finalBoardByHand = {};    // hand_id -> [cards]
+  const actionsByStep = {};
+  const reasoningByStep = {};
+  const talksByStep = {};
+  const sessionByHandSeat = {};   // hand_id -> { seat_id -> snapshot }
+  const commentaryByStep = {};    // step -> { text, hand_id }
+  const smokeEvents = [];          // legacy staged crisis events; live fire takes precedence
+  const liveFireByStep = {};       // poker step -> in-hand fire state
+  const stepOrder = [];
+
+  for (const ev of events) {
+    switch (ev.event) {
+      case "hand_start":
+        handStartBySeat[ev.hand_id] = ev;
+        if (ev.agents && typeof ev.agents === "object") {
+          for (const [seat, agent] of Object.entries(ev.agents)) {
+            mergeAgentInfo(agentsBySeat, seat, agentInfoFromPayload(agent));
+          }
+        }
+        break;
+      case "hand_result":
+        finalBoardByHand[ev.hand_id] = ev.board || [];
+        break;
+      case "action":
+        if (!actionsByStep[ev.step]) stepOrder.push(ev.step);
+        actionsByStep[ev.step] = ev;
+        mergeAgentInfo(agentsBySeat, ev.seat_id, agentInfoFromPayload(ev));
+        break;
+      case "memory_reasoning":
+        reasoningByStep[ev.step] = ev;
+        mergeAgentInfo(agentsBySeat, ev.seat_id, agentInfoFromPayload(ev));
+        break;
+      case "table_talk":
+        (talksByStep[ev.step] = talksByStep[ev.step] || []).push(ev);
+        mergeAgentInfo(agentsBySeat, ev.seat_id, agentInfoFromPayload(ev));
+        break;
+      case "session_snapshot":
+        if (!sessionByHandSeat[ev.hand_id]) sessionByHandSeat[ev.hand_id] = {};
+        sessionByHandSeat[ev.hand_id][ev.seat_id] = ev.snapshot;
+        mergeAgentInfo(agentsBySeat, ev.seat_id, agentInfoFromPayload(ev));
+        break;
+      case "commentary":
+        commentaryByStep[ev.step] = ev;
+        break;
+      case "live_fire_tick":
+        liveFireByStep[ev.step] = ev;
+        if (ev.agent_states && typeof ev.agent_states === "object") {
+          for (const [seat, raw] of Object.entries(ev.agent_states)) {
+            mergeAgentInfo(agentsBySeat, seat, agentInfoFromPayload(raw));
+          }
+        }
+        break;
+      default:
+        if (CRISIS_EVENTS.has(ev.event)) smokeEvents.push(ev);
+    }
+  }
+
+  stepOrder.sort((a,b) => a-b);
+
+  // Infer agent registry from actions
+  for (const step of stepOrder) {
+    const a = actionsByStep[step];
+    if (a) mergeAgentInfo(agentsBySeat, a.seat_id, agentInfoFromPayload(a));
+  }
+
+  // Build per-step projected state (running pot, stacks, committed, folded, all_in, board)
+  const timeline = [];
+  const liveFireSteps = new Set(Object.keys(liveFireByStep).map(Number));
+  const liveFireTotal = liveFireSteps.size;
+  let liveFireIndex = 0;
+  for (const step of stepOrder) {
+    const action = actionsByStep[step];
+    const handStart = handStartBySeat[action.hand_id];
+    if (!handStart) continue;
+    const finalBoard = finalBoardByHand[action.hand_id] || [];
+
+    // Build running per-hand state by replaying everything up to and including this step
+    const proj = projectHandState(handStart, finalBoard, actionsByStep, stepOrder, step);
+
+    const frame = {
+      step,
+      hand: action.hand_id,
+      action,
+      reasoning: reasoningByStep[step] || null,
+      talks: talksByStep[step] || [],
+      state: proj,
+    };
+    if (liveFireByStep[step]) {
+      liveFireIndex++;
+      frame.kind = "crisis";
+      frame.crisis = crisisFromLiveFire(liveFireByStep[step], agentsBySeat, liveFireIndex, liveFireTotal);
+    }
+    timeline.push(frame);
+  }
+
+  const liveOnlySteps = [...liveFireSteps]
+    .filter(step => !actionsByStep[step])
+    .sort((a, b) => a - b);
+  for (const step of liveOnlySteps) {
+    const base = timeline[timeline.length - 1];
+    if (!base) break;
+    const ev = liveFireByStep[step];
+    liveFireIndex++;
+    timeline.push({
+      ...base,
+      step,
+      kind: "crisis",
+      crisis: crisisFromLiveFire(ev, agentsBySeat, liveFireIndex, liveFireTotal),
+      action: {
+        ...(base.action || {}),
+        step,
+        hand_id: ev.hand_id ?? base.hand,
+        seat_id: ev.action_seat ?? base.action?.seat_id,
+      },
+      reasoning: null,
+      talks: [],
+    });
+  }
+
+  if (timeline.length && smokeEvents.length && liveFireTotal === 0) {
+    timeline.push(...buildCrisisFrames(smokeEvents, timeline[timeline.length - 1], agentsBySeat));
+  }
+
+  return { agentsBySeat, timeline, sessionByHandSeat, commentaryByStep, smokeEvents };
+}
+
+function personaFromAgentId(agentId) {
+  if (!agentId) return null;
+  const head = String(agentId).split("-")[0];
+  if (PERSONA_ICON[head]) return head;
+  return null;
+}
+
+function projectHandState(handStart, finalBoard, actionsByStep, stepOrder, uptoStep) {
+  // Start from hand_start and re-apply actions in step order for THIS hand
+  const handSteps = stepOrder.filter(s => actionsByStep[s].hand_id === handStart.hand_id);
+  const stacks = { ...handStart.stacks };
+  const committed = {};   // total committed across the whole hand
+  const streetCommit = {}; // reset each street
+  const folded = new Set();
+  const allIn = new Set();
+  let pot = 0;
+  let street = "preflop";
+  let board = [];
+  let actor = null;
+  let lastAction = null;
+
+  // Apply blinds from the first hand_start data
+  const sb = handStart.small_blind, bb = handStart.big_blind;
+  const active = handStart.seats;
+  // Very small bookkeeping — engine already computed real pot in each action's pot_after,
+  // so we rely on action.pot_after / stack_after for truth.
+  for (const step of handSteps) {
+    const a = actionsByStep[step];
+    if (step > uptoStep) break;
+    street = a.street;
+    stacks[a.seat_id] = a.stack_after;
+    committed[a.seat_id] = (committed[a.seat_id] || 0);
+    if (a.action === "fold") folded.add(a.seat_id);
+    if (a.action === "all_in" || a.stack_after === 0) allIn.add(a.seat_id);
+    pot = a.pot_after;
+    actor = a.seat_id;
+    lastAction = a;
+    // street-committed display: use observation-ish approximation via (amount) for bet/raise, contributed for call.
+    streetCommit[a.seat_id] = a.amount != null ? a.amount : (streetCommit[a.seat_id] || 0) + a.contributed;
+    // If street changed, reset streetCommit for all
+    // (we detect by seeing a street change between consecutive steps)
+  }
+
+  // recompute streetCommit for the actual current street by replaying only same-street actions
+  const currentStreet = lastAction ? lastAction.street : "preflop";
+  const sc = {};
+  for (const step of handSteps) {
+    if (step > uptoStep) break;
+    const a = actionsByStep[step];
+    if (a.street !== currentStreet) continue;
+    sc[a.seat_id] = a.amount != null ? a.amount : (sc[a.seat_id] || 0) + a.contributed;
+  }
+
+  // Pick board cards according to current street
+  const streetToBoard = { preflop: 0, flop: 3, turn: 4, river: 5, showdown: 5 };
+  const nShow = streetToBoard[currentStreet] ?? 0;
+  board = finalBoard.slice(0, nShow);
+
+  return {
+    hand_id: handStart.hand_id,
+    button_seat: handStart.button_seat,
+    small_blind: sb, big_blind: bb,
+    hole_cards: handStart.hole_cards || {},
+    stacks, pot, board, street: currentStreet,
+    committed_street: sc,
+    folded, allIn,
+    actor, lastAction,
+  };
+}
+
+function emptyCrisisSeat(seat, agentsBySeat) {
+  return {
+    seat_id: seat,
+    agent_id: agentsBySeat[seat]?.agent_id || `seat ${seat}`,
+    gender: agentsBySeat[seat]?.gender || null,
+    full_name: agentsBySeat[seat]?.full_name || null,
+    location: DEFAULT_CRISIS_LOCATIONS[seat] || "spectators",
+    belief_fire: 0,
+    status: "playing",
+    detected: false,
+    warned: false,
+    doubting: false,
+    chosen_exit: null,
+    helped_by: null,
+    helped: [],
+  };
+}
+
+function createCrisisModel(agentsBySeat) {
+  const seats = {};
+  for (let seat = 0; seat < SEAT_COUNT; seat++) seats[seat] = emptyCrisisSeat(seat, agentsBySeat);
+  return {
+    active: false,
+    stage: 0,
+    fireOrigin: "storage",
+    roomLayout: {},
+    seats,
+    links: [],
+    reputations: {},
+    profiles: {},
+    metrics: null,
+    currentEvent: null,
+    frameNumber: 0,
+    totalFrames: 0,
+  };
+}
+
+function ensureCrisisSeat(model, seat, agentId) {
+  const key = Number(seat);
+  if (!model.seats[key]) model.seats[key] = emptyCrisisSeat(key, {});
+  if (agentId) model.seats[key].agent_id = agentId;
+  return model.seats[key];
+}
+
+function applyCrisisEvent(model, ev) {
+  if (!ev || !CRISIS_EVENTS.has(ev.event)) return;
+  if (typeof ev.stage === "number") model.stage = Math.max(model.stage || 0, ev.stage);
+  switch (ev.event) {
+    case "crisis_start":
+      model.active = true;
+      model.stage = 0;
+      model.fireOrigin = ev.fire_origin || model.fireOrigin;
+      model.roomLayout = ev.room_layout || model.roomLayout;
+      break;
+    case "reputation_transfer_input":
+      model.reputations = ev.reputations || {};
+      model.profiles = ev.profiles || {};
+      break;
+    case "smoke_cue_detected": {
+      const seat = ensureCrisisSeat(model, ev.seat_id, ev.agent_id);
+      seat.detected = true;
+      seat.location = ev.location || seat.location;
+      if (seat.status === "playing") seat.status = "detected";
+      break;
+    }
+    case "fire_warning": {
+      const seat = ensureCrisisSeat(model, ev.seat_id, ev.agent_id);
+      seat.warned = true;
+      if (!["evacuating", "exited", "delayed", "injured"].includes(seat.status)) seat.status = "warning";
+      break;
+    }
+    case "warning_belief_update": {
+      const listener = ensureCrisisSeat(model, ev.listener_seat);
+      listener.belief_fire = Math.max(listener.belief_fire || 0, Number(ev.belief || 0));
+      ensureCrisisSeat(model, ev.speaker_seat).warned = true;
+      break;
+    }
+    case "bluff_penalty_in_crisis": {
+      const listener = ensureCrisisSeat(model, ev.listener_seat);
+      listener.doubting = true;
+      if (listener.status === "playing" || listener.status === "detected") listener.status = "doubting";
+      break;
+    }
+    case "evacuation_decision":
+    case "smoke_decision": {
+      const seat = ensureCrisisSeat(model, ev.seat_id, ev.agent_id);
+      seat.belief_fire = Math.max(seat.belief_fire || 0, Number(ev.belief_fire || 0));
+      seat.status = ev.decision || seat.status;
+      seat.chosen_exit = ev.chosen_exit || seat.chosen_exit;
+      seat.score = typeof ev.score === "number" ? ev.score : seat.score;
+      break;
+    }
+    case "wrong_exit_delay": {
+      const seat = ensureCrisisSeat(model, ev.seat_id, ev.agent_id);
+      seat.status = "delayed";
+      seat.chosen_exit = ev.chosen_exit || "exit";
+      break;
+    }
+    case "rescue_link": {
+      const helper = ensureCrisisSeat(model, ev.helper_seat, ev.helper_agent_id);
+      const target = ensureCrisisSeat(model, ev.target_seat, ev.target_agent_id);
+      helper.helped = Array.from(new Set([...(helper.helped || []), target.seat_id]));
+      target.helped_by = helper.seat_id;
+      target.status = "rescued";
+      model.links.push({ helper: helper.seat_id, target: target.seat_id, event: ev.event });
+      break;
+    }
+    case "evacuated": {
+      const seat = ensureCrisisSeat(model, ev.seat_id, ev.agent_id);
+      seat.status = "exited";
+      seat.chosen_exit = ev.chosen_exit || seat.chosen_exit;
+      seat.evacuation_decision_time = ev.decision_time || seat.evacuation_decision_time;
+      if (ev.rescued_by != null) seat.helped_by = ev.rescued_by;
+      break;
+    }
+    case "injury_or_isolation": {
+      const seat = ensureCrisisSeat(model, ev.seat_id, ev.agent_id);
+      seat.status = "injured";
+      break;
+    }
+    case "crisis_summary":
+      model.metrics = ev.metrics || model.metrics;
+      if (ev.final_states) {
+        for (const [seatStr, state] of Object.entries(ev.final_states)) {
+          const seat = ensureCrisisSeat(model, Number(seatStr), state.agent_id);
+          Object.assign(seat, state);
+        }
+      }
+      break;
+  }
+  model.currentEvent = ev;
+}
+
+function projectCrisisModel(events, agentsBySeat) {
+  const model = createCrisisModel(agentsBySeat);
+  for (const ev of events) applyCrisisEvent(model, ev);
+  return model;
+}
+
+function crisisFromLiveFire(ev, agentsBySeat, frameNumber, totalFrames) {
+  const seats = {};
+  const source = ev.agent_states || {};
+  for (let seat = 0; seat < SEAT_COUNT; seat++) {
+    const raw = source[String(seat)] || {};
+    seats[seat] = {
+      ...emptyCrisisSeat(seat, agentsBySeat),
+      ...raw,
+      seat_id: seat,
+      agent_id: raw.agent_id || agentsBySeat[seat]?.agent_id || `seat ${seat}`,
+      gender: normalizeGender(raw.gender || agentsBySeat[seat]?.gender),
+      full_name: raw.full_name || agentsBySeat[seat]?.full_name || null,
+      belief_fire: Number(raw.belief_fire || 0),
+      status: raw.status || "playing",
+      chosen_exit: raw.chosen_exit || null,
+      motive: raw.motive || "playing",
+      danger: Number(raw.danger || 0),
+      chip_temptation: Number(raw.chip_temptation || 0),
+      rivalry_pressure: Number(raw.rivalry_pressure || 0),
+      goal_pressure: Number(raw.goal_pressure || 0),
+      dynamic_state: raw.dynamic_state || {},
+    };
+  }
+  return {
+    active: true,
+    live: true,
+    stage: null,
+    fireOrigin: "danger_ring",
+    roomLayout: {},
+    seats,
+    links: [],
+    reputations: {},
+    profiles: {},
+    metrics: null,
+    currentEvent: ev,
+    visualProgress: Number(ev.pressure || 0),
+    safeRadius: Number(ev.safe_radius || 0.92),
+    frameNumber,
+    totalFrames,
+  };
+}
+
+function buildCrisisFrames(smokeEvents, baseFrame, agentsBySeat) {
+  const visualEvents = smokeEvents.filter(ev => CRISIS_VISUAL_EVENTS.has(ev.event));
+  const frames = [];
+  const running = [];
+  let previousProgress = 0.04;
+  const totalTweenFrames = visualEvents.length * CRISIS_TWEEN_FRAMES;
+  for (const ev of smokeEvents) {
+    running.push(ev);
+    if (!CRISIS_VISUAL_EVENTS.has(ev.event)) continue;
+    const crisis = projectCrisisModel(running, agentsBySeat);
+    crisis.currentEvent = ev;
+    const targetProgress = Math.max(previousProgress, crisisProgress(crisis));
+    for (let tween = 1; tween <= CRISIS_TWEEN_FRAMES; tween++) {
+      const t = tween / CRISIS_TWEEN_FRAMES;
+      const eased = t * t * (3 - 2 * t);
+      const visualProgress = previousProgress + (targetProgress - previousProgress) * eased;
+      const frameNumber = frames.length + 1;
+      frames.push({
+        ...baseFrame,
+        kind: "crisis",
+        step: Number(baseFrame.step || 0) + frameNumber,
+        crisis: {
+          ...crisis,
+          visualProgress,
+          tweenIndex: tween,
+          tweenCount: CRISIS_TWEEN_FRAMES,
+          frameNumber,
+          totalFrames: totalTweenFrames,
+        },
+        reasoning: null,
+        talks: [],
+      });
+    }
+    previousProgress = targetProgress;
+  }
+  return frames;
+}
+
+// --------- Rendering ---------
+function renderCard(cardStr, opts={}) {
+  if (!cardStr) {
+    const div = document.createElement("div");
+    div.className = "card hidden" + (opts.small ? " small" : "");
+    return div;
+  }
+  const rank = cardStr[0] === "T" ? "10" : cardStr[0].toUpperCase();
+  const suitLetter = cardStr[1];
+  const [glyph, color] = SUITS[suitLetter] || ["?", "black"];
+  const div = document.createElement("div");
+  div.className = "card" + (color === "red" ? " red" : "") + (opts.small ? " small" : "");
+  div.innerHTML = `<div class="rank">${rank}</div><div class="suit">${glyph}</div>`;
+  return div;
+}
+
+function renderBoard(board) {
+  const host = document.getElementById("board");
+  host.innerHTML = "";
+  for (let i = 0; i < 5; i++) {
+    if (board[i]) host.appendChild(renderCard(board[i]));
+    else {
+      const empty = document.createElement("div");
+      empty.className = "card back";
+      empty.style.opacity = "0.15";
+      host.appendChild(empty);
+    }
+  }
+}
+
+function crisisVisualStatus(seatState) {
+  if (!seatState) return null;
+  if (seatState.status === "fatal") return "fatal";
+  if (seatState.status === "engulfed") return "engulfed";
+  if (seatState.status === "stood_up") return "stood_up";
+  if (seatState.status === "trapped") return "trapped";
+  if (seatState.status === "injured") return "injured";
+  if (seatState.status === "delayed") return "delayed";
+  if (seatState.status === "hesitating") return "hesitating";
+  if (seatState.status === "clinging_to_stack") return "clinging_to_stack";
+  if (seatState.status === "tempted_by_chips") return "tempted_by_chips";
+  if (seatState.status === "exited") return seatState.helped_by != null ? "rescued" : "exited";
+  if (seatState.status === "evacuating") return "evacuating";
+  if (seatState.status === "verifying") return "verifying";
+  if (seatState.doubting) return "doubting";
+  if (seatState.warned) return "warning";
+  if (seatState.detected) return "detected";
+  return seatState.status || "playing";
+}
+
+function dollLeaveVector(seat) {
+  const vectors = {
+    0: [-42, -76],
+    1: [42, -76],
+    2: [42, 76],
+    3: [-42, 76],
+    4: [-12, -88],
+    5: [12, 88],
+  };
+  return vectors[seat] || [0, -86];
+}
+
+function dollMotionStyle(seat, crisisSeat, crisisStatus, crisis) {
+  if (!crisisSeat || !crisisStatus) return "";
+  if (crisisStatus === "exited" || crisisStatus === "injured") {
+    return "opacity:0; transform:translate(-50%, -50%) scale(.8);";
+  }
+  if (crisisStatus !== "evacuating" && crisisStatus !== "rescued" && crisisStatus !== "stood_up") return "";
+
+  const ev = crisis?.currentEvent || {};
+  const isThisSeatEvent = Number(ev.seat_id) === Number(seat) || Number(ev.target_seat) === Number(seat);
+  const tweenRatio = Math.max(0, Math.min(1, (crisis?.tweenIndex || CRISIS_TWEEN_FRAMES) / (crisis?.tweenCount || CRISIS_TWEEN_FRAMES)));
+  let progress = isThisSeatEvent ? tweenRatio : 0.72;
+  if (crisisStatus === "rescued") progress = isThisSeatEvent ? Math.max(0.45, tweenRatio) : 0.86;
+
+  const [exitX, exitY] = dollLeaveVector(seat);
+  const standLift = -18 * Math.min(1, progress * 1.8);
+  const x = exitX * progress;
+  const y = exitY * progress + standLift;
+  const scale = 0.88 + 0.18 * Math.max(0, 1 - Math.abs(progress - 0.22) * 3.2);
+  const opacity = Math.max(0, 1 - Math.max(0, progress - 0.35) / 0.65);
+  return `opacity:${opacity.toFixed(3)}; transform:translate(calc(-50% + ${x.toFixed(1)}px), calc(-50% + ${y.toFixed(1)}px)) scale(${scale.toFixed(3)});`;
+}
+
+function cssVar(name, fallback) {
+  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return value || fallback;
+}
+
+function dollColorFor(seat, info, crisisSeat) {
+  const gender = normalizeGender(crisisSeat?.gender || info?.gender);
+  if (gender === "male") return cssVar("--doll-male", "#6ad7ff");
+  if (gender === "female") return cssVar("--doll-female", "#ff8fc8");
+  return cssVar(`--seat-${seat}`, "#f5c451");
+}
+
+function renderSeats(frame) {
+  const { agentsBySeat } = state.seeds.get(state.currentSeed);
+  const { state: s, action, talks } = frame;
+  const seatsRoot = document.querySelectorAll(".seat");
+  seatsRoot.forEach(el => el.innerHTML = "");
+  for (let seat = 0; seat < SEAT_COUNT; seat++) {
+    const el = document.querySelector(`.seat[data-seat="${seat}"]`);
+    if (!el) continue;
+    const info = agentsBySeat[seat] || { agent_id: `seat ${seat}`, persona: null };
+    el.classList.toggle("folded", s.folded.has(seat));
+    el.classList.toggle("allin", s.allIn.has(seat));
+    el.classList.toggle("actor", s.actor === seat);
+    for (const cls of ["detected", "warning", "doubting", "verifying", "evacuating", "stood_up", "engulfed", "fatal", "delayed", "hesitating", "clinging_to_stack", "tempted_by_chips", "rescued", "exited", "trapped", "injured"]) {
+      el.classList.remove(`crisis-${cls}`);
+    }
+    const crisisSeat = frame.crisis?.seats?.[seat];
+    const crisisStatus = crisisSeat ? crisisVisualStatus(crisisSeat) : null;
+    if (frame.kind === "crisis" && crisisStatus) el.classList.add(`crisis-${crisisStatus}`);
+
+    const doll = document.createElement("div");
+    const dollStatus = frame.kind === "crisis" && crisisStatus ? crisisStatus : "playing";
+    doll.className = `agent-doll ${dollStatus}`;
+    doll.dataset.gender = normalizeGender(crisisSeat?.gender || info.gender) || "";
+    doll.setAttribute("style", `color:${dollColorFor(seat, info, crisisSeat)}; ${dollMotionStyle(seat, crisisSeat, crisisStatus, frame.crisis)}`);
+    doll.innerHTML = '<span class="head"></span><span class="torso"></span>';
+    el.appendChild(doll);
+
+    const plate = document.createElement("div");
+    plate.className = "plate";
+
+    // dealer button marker
+    if (s.button_seat === seat) {
+      const d = document.createElement("div");
+      d.className = "dealer-token";
+      d.textContent = "D";
+      plate.appendChild(d);
+    }
+
+    const badge = document.createElement("div");
+    badge.className = "badge";
+    badge.textContent = PERSONA_ICON[info.persona] || "🎲";
+    plate.appendChild(badge);
+
+    const who = document.createElement("div");
+    who.className = "who";
+    who.innerHTML = `<span class="name">${info.agent_id}</span><span class="persona">${info.persona || ""}</span>`;
+    plate.appendChild(who);
+
+    const hole = document.createElement("div");
+    hole.className = "hole";
+    const cards = s.hole_cards[seat] || [];
+    for (const c of cards) hole.appendChild(renderCard(c, {small:true}));
+    plate.appendChild(hole);
+
+    const actionLabel = (action && action.seat_id === seat)
+      ? `<span class="action-pill ${action.action}">${action.action.toUpperCase()}${action.action==="bet"||action.action==="raise"?" "+action.amount:""}</span>`
+      : (s.folded.has(seat) ? `<span class="action-pill fold">FOLD</span>` : "");
+    const actionSlot = document.createElement("div");
+    actionSlot.innerHTML = actionLabel;
+    plate.appendChild(actionSlot);
+
+    const stackRow = document.createElement("div");
+    stackRow.className = "stack-row";
+    const streetCommit = s.committed_street[seat] || 0;
+    stackRow.innerHTML = `<span class="chips">${s.stacks[seat] ?? 0}</span>
+      <span class="committed">bet <b>${streetCommit}</b></span>`;
+    plate.appendChild(stackRow);
+
+    if (frame.kind === "crisis" && crisisSeat) {
+      const chip = document.createElement("div");
+      chip.className = `crisis-chip ${crisisStatus}`;
+      const belief = Number(crisisSeat.belief_fire || 0);
+      chip.innerHTML = `<span>${CRISIS_STATUS_LABEL[crisisStatus] || crisisStatus}</span><span class="belief">${belief.toFixed(2)}</span>`;
+      plate.appendChild(chip);
+    }
+
+    el.appendChild(plate);
+
+    // Speech bubble for table_talk this step (if any from this seat)
+    const myTalk = talks.find(t => t.seat_id === seat);
+    if (myTalk) {
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+      const label = `${info.agent_id} → ${myTalk.to === "all" ? "ALL" : "seat " + myTalk.to}`;
+      bubble.innerHTML = `<span class="who">${escapeHtml(label)}</span>${escapeHtml(myTalk.text)}`;
+      el.appendChild(bubble);
+    }
+  }
+}
+
+function renderActionSummary(frame) {
+  const root = document.getElementById("action-summary");
+  if (frame.kind === "crisis") {
+    const c = frame.crisis;
+    const ev = c.currentEvent || {};
+    if (c.live) {
+      const rows = [
+        ["mode", `<span class="verb all_in">DANGER RING</span>`],
+        ["poker step", ev.step ?? frame.step],
+        ["hand", ev.hand_id ?? frame.hand],
+        ["pressure", `${Math.round((ev.pressure || 0) * 100)}%`],
+        ["safe radius", Number(ev.safe_radius || 0).toFixed(2)],
+        ["state", ev.post_poker ? "post-hand fire" : "during action"],
+        ["active seats", Array.isArray(ev.active_seats) ? ev.active_seats.map(s => `S${s}`).join(", ") : "—"],
+        ["action seat", ev.action_seat != null ? `seat ${ev.action_seat}` : "—"],
+      ];
+      root.innerHTML = rows.map(([k,v]) => `<div class="k">${k}</div><div class="v">${v}</div>`).join("");
+      return;
+    }
+    const rows = [
+      ["phase", `<span class="verb all_in">FIRE</span>`],
+      ["stage", `${ev.stage ?? c.stage} · ${CRISIS_STAGE_LABEL[ev.stage ?? c.stage] || "—"}`],
+      ["event", CRISIS_EVENT_LABEL[ev.event] || ev.event || "—"],
+      ["frame", `${c.frameNumber} / ${c.totalFrames}`],
+    ];
+    if (ev.seat_id != null) rows.push(["seat", `${ev.seat_id} (${ev.agent_id || c.seats[ev.seat_id]?.agent_id || "—"})`]);
+    if (ev.speaker_seat != null) rows.push(["speaker", `seat ${ev.speaker_seat}`]);
+    if (ev.listener_seat != null) rows.push(["listener", `seat ${ev.listener_seat}`]);
+    if (ev.helper_seat != null) rows.push(["helper", `seat ${ev.helper_seat}`]);
+    if (ev.target_seat != null) rows.push(["target", `seat ${ev.target_seat}`]);
+    if (ev.decision) rows.push(["decision", ev.decision]);
+    if (ev.belief != null) rows.push(["belief", Number(ev.belief).toFixed(3)]);
+    if (ev.score != null) rows.push(["score", Number(ev.score).toFixed(3)]);
+    root.innerHTML = rows.map(([k,v]) => `<div class="k">${k}</div><div class="v">${v}</div>`).join("");
+    return;
+  }
+  const a = frame.action;
+  const d = a.decision || {};
+  const verbClass = a.action;
+  const rows = [
+    ["step", a.step],
+    ["hand", a.hand_id],
+    ["street", a.street],
+    ["seat", `${a.seat_id} (${a.agent_id})`],
+    ["action", `<span class="verb ${verbClass}">${a.action.toUpperCase()}</span>${a.amount!=null?" · amount "+a.amount:""}`],
+    ["contributed", a.contributed],
+    ["to_call_before", a.to_call_before],
+    ["pot_after", a.pot_after],
+    ["stack_after", a.stack_after],
+  ];
+  if (a.fallback) rows.push(["fallback", a.fallback]);
+  root.innerHTML = rows.map(([k,v]) => `<div class="k">${k}</div><div class="v">${v}</div>`).join("");
+}
+
+function crisisProgress(crisis) {
+  if (!crisis) return 0;
+  if (typeof crisis.visualProgress === "number") return crisis.visualProgress;
+  const ev = crisis.currentEvent || {};
+  const stage = Number(ev.stage ?? crisis.stage ?? 0);
+  const base = { 0: 0.08, 1: 0.28, 2: 0.48, 3: 0.68, 4: 0.88, 5: 0.60 }[stage] ?? 0.18;
+  if (ev.event === "crisis_start") return 0.12;
+  if (ev.event === "smoke_cue_detected") return 0.24;
+  if (ev.event === "fire_warning" || ev.event === "warning_belief_update") return 0.34;
+  if (ev.event === "bluff_penalty_in_crisis") return 0.40;
+  if (ev.event === "wrong_exit_delay" || ev.event === "injury_or_isolation") return 0.94;
+  if (ev.event === "rescue_link" || ev.event === "evacuated") return 0.82;
+  return base;
+}
+
+// --------- Flame tongue animation (SVG paths licking inward from the storm edge) ---------
+// 12 SVG paths whose `d` is rewritten each animation frame using two superposed sine waves
+// per tongue. The result breaks the same-radius look of the underlying CSS gradient so the
+// boundary reads as actual fire instead of a shrinking disk.
+const FIRE_TONGUE_COUNT = 12;
+const FIRE_VIEWBOX_RADIUS = Math.hypot(50, 50); // farthest-corner distance in viewBox units
+
+const fireTongueState = {
+  rafId: null,
+  paths: [],
+  safeRadiusPct: 50,
+  intensity: 0,
+  startTime: 0,
+};
+
+function ensureFireTongues() {
+  if (fireTongueState.paths.length === FIRE_TONGUE_COUNT) return;
+  const group = document.getElementById("fire-tongues-group");
+  if (!group) return;
+  group.innerHTML = "";
+  fireTongueState.paths = [];
+  for (let i = 0; i < FIRE_TONGUE_COUNT; i++) {
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", "M50 50");
+    group.appendChild(path);
+    fireTongueState.paths.push(path);
+  }
+}
+
+function flameTonguePath(centerAngle, baseR, tipR, halfWidth) {
+  const cx = 50, cy = 50;
+  const a1 = centerAngle - halfWidth;
+  const a2 = centerAngle + halfWidth;
+  const tipX = cx + tipR * Math.cos(centerAngle);
+  const tipY = cy + tipR * Math.sin(centerAngle);
+  const b1x = cx + baseR * Math.cos(a1);
+  const b1y = cy + baseR * Math.sin(a1);
+  const b2x = cx + baseR * Math.cos(a2);
+  const b2y = cy + baseR * Math.sin(a2);
+  const ctrlR1 = baseR * 0.62 + tipR * 0.42;
+  const ctrlR2 = baseR * 0.52 + tipR * 0.55;
+  const c1Ang = centerAngle - halfWidth * 0.42;
+  const c2Ang = centerAngle + halfWidth * 0.42;
+  const c1x = cx + ctrlR1 * Math.cos(c1Ang);
+  const c1y = cy + ctrlR1 * Math.sin(c1Ang);
+  const c2x = cx + ctrlR2 * Math.cos(c2Ang);
+  const c2y = cy + ctrlR2 * Math.sin(c2Ang);
+  const r = baseR.toFixed(2);
+  return `M${b1x.toFixed(2)} ${b1y.toFixed(2)} `
+       + `Q${c1x.toFixed(2)} ${c1y.toFixed(2)} ${tipX.toFixed(2)} ${tipY.toFixed(2)} `
+       + `Q${c2x.toFixed(2)} ${c2y.toFixed(2)} ${b2x.toFixed(2)} ${b2y.toFixed(2)} `
+       + `A${r} ${r} 0 0 0 ${b1x.toFixed(2)} ${b1y.toFixed(2)} Z`;
+}
+
+function updateFireTongues(timeMs) {
+  if (!fireTongueState.paths.length) return;
+  const t = (timeMs - fireTongueState.startTime) / 1000;
+  const safeR = (fireTongueState.safeRadiusPct / 100) * FIRE_VIEWBOX_RADIUS;
+  const intensity = fireTongueState.intensity;
+  const baseR = FIRE_VIEWBOX_RADIUS * 0.98;
+  const baseAmp = 3.5;
+  const extraAmp = 8.5;
+  const halfWidth = (Math.PI / FIRE_TONGUE_COUNT) * 0.62;
+  const slowDrift = t * 0.18;
+  for (let i = 0; i < fireTongueState.paths.length; i++) {
+    const angle = ((i + 0.5) / FIRE_TONGUE_COUNT) * Math.PI * 2 + slowDrift;
+    const phi = i * 1.73;
+    const w1 = Math.sin(t * 2.5 + phi);
+    const w2 = Math.sin(t * 4.3 + phi * 1.6) * 0.55;
+    const wave = (w1 + w2) / 1.55; // [-1, 1]
+    const amp = baseAmp + extraAmp * intensity * (0.55 + 0.45 * wave);
+    const tipR = safeR <= 0.01 ? 0 : Math.max(2, safeR - amp);
+    fireTongueState.paths[i].setAttribute("d", flameTonguePath(angle, baseR, tipR, halfWidth));
+  }
+}
+
+function fireTongueRaf(now) {
+  if (fireTongueState.rafId === null) return;
+  updateFireTongues(now);
+  fireTongueState.rafId = requestAnimationFrame(fireTongueRaf);
+}
+
+function startFireTongueLoop() {
+  if (fireTongueState.rafId !== null) return;
+  if (!fireTongueState.startTime) fireTongueState.startTime = performance.now();
+  fireTongueState.rafId = requestAnimationFrame(fireTongueRaf);
+}
+
+function stopFireTongueLoop() {
+  if (fireTongueState.rafId !== null) {
+    cancelAnimationFrame(fireTongueState.rafId);
+    fireTongueState.rafId = null;
+  }
+}
+
+function renderCrisisOverlay(frame) {
+  const table = document.getElementById("table");
+  const overlay = document.getElementById("fire-overlay");
+  const banner = document.getElementById("crisis-banner");
+  const source = document.getElementById("fire-source");
+  if (frame.kind !== "crisis" || !frame.crisis) {
+    table.classList.remove("fire-active");
+    overlay.hidden = true;
+    for (const el of [banner, source]) el.hidden = true;
+    for (const target of [table, overlay]) {
+      target.style.removeProperty("--safe-radius");
+      target.style.removeProperty("--storm-alpha");
+      target.style.removeProperty("--storm-edge-alpha");
+      target.style.removeProperty("--storm-core-alpha");
+      target.style.removeProperty("--safe-ring-alpha");
+      target.style.removeProperty("--fire-glow-alpha");
+      target.style.removeProperty("--engulf-alpha");
+      target.style.removeProperty("--storm-scale");
+    }
+    overlay.style.removeProperty("--tongue-opacity");
+    stopFireTongueLoop();
+    return;
+  }
+  const crisis = frame.crisis;
+  const ev = crisis.currentEvent || {};
+  const progress = typeof crisis.visualProgress === "number" ? crisis.visualProgress : crisisProgress(crisis);
+  // Visual-only shrink curve. Simulation pressure/safe_radius values remain
+  // unchanged, but the rendered fire now fully occupies the table at 100%.
+  const safeRadius = Math.max(0, Math.round(84 * (1 - Math.pow(progress, 1.28))));
+  const terminalEngulf = Math.max(0, Math.min(1, (progress - 0.86) / 0.14));
+  const alpha = Math.min(0.84, 0.08 + progress * 0.54 + terminalEngulf * 0.22);
+  const ringAlpha = Math.min(0.95, 0.32 + progress * 0.72);
+  overlay.hidden = false;
+  table.classList.add("fire-active");
+  for (const target of [table, overlay]) {
+    target.style.setProperty("--safe-radius", `${safeRadius}%`);
+    target.style.setProperty("--storm-alpha", alpha.toFixed(3));
+    target.style.setProperty("--storm-edge-alpha", Math.min(0.66, alpha * 0.82).toFixed(3));
+    target.style.setProperty("--storm-core-alpha", Math.min(0.78, alpha * 1.08).toFixed(3));
+    target.style.setProperty("--safe-ring-alpha", ringAlpha.toFixed(3));
+    target.style.setProperty("--fire-glow-alpha", Math.min(0.42, alpha * 0.46).toFixed(3));
+    target.style.setProperty("--engulf-alpha", (terminalEngulf * 0.36).toFixed(3));
+    target.style.setProperty("--storm-scale", (1.02 - progress * 0.04).toFixed(3));
+  }
+  ensureFireTongues();
+  fireTongueState.safeRadiusPct = safeRadius;
+  fireTongueState.intensity = Math.max(0.18, Math.min(1.0, progress * 1.15));
+  overlay.style.setProperty("--tongue-opacity", Math.min(0.92, 0.28 + progress * 0.68).toFixed(3));
+  startFireTongueLoop();
+
+  banner.hidden = false;
+  if (crisis.live) {
+    banner.hidden = true;
+  } else {
+    banner.textContent = `FIRE · ${CRISIS_EVENT_LABEL[ev.event] || ev.event}`;
+  }
+  source.hidden = true;
+}
+
+function hasCrisisEvent(crisis, eventName) {
+  return crisis.currentEvent?.event === eventName || crisis.links?.some(l => l.event === eventName);
+}
+
+function describeCrisisEvent(ev) {
+  if (!ev) return "—";
+  switch (ev.event) {
+    case "live_fire_tick": {
+      const states = Object.values(ev.agent_states || {});
+      const fatal = states.filter(s => s.status === "fatal").map(s => `S${s.seat_id}`);
+      const engulfed = states.filter(s => s.status === "engulfed").map(s => `S${s.seat_id}`);
+      const tempted = states.filter(s => s.status === "tempted_by_chips").map(s => `S${s.seat_id}`);
+      const rivalry = states.filter(s => s.status === "tempted_by_chips" && s.motive === "rivalry_chip_fixation").map(s => `S${s.seat_id}`);
+      const staying = states.filter(s => s.status === "clinging_to_stack").map(s => `S${s.seat_id}`);
+      if (fatal.length) return `${fatal.join(", ")} は火に触れ続け fatal に到達`;
+      if (engulfed.length) return `${engulfed.join(", ")} は火が席に触れているがまだ立てていない`;
+      if (rivalry.length) return `${rivalry.join(", ")} は因縁とチップへの未練で席付近に残っている`;
+      if (tempted.length) return `${tempted.join(", ")} はチップへの未練で避難判断が遅れている`;
+      if (staying.length) return `${staying.join(", ")} が勝ち筋やチップに執着して席を離れない`;
+      if (ev.post_poker) return `勝負後も残留理由を観測しながら危険圏が進行中`;
+      return `卓中心の安全圏へ赤い危険圏が接近中`;
+    }
+    case "smoke_cue_detected":
+      return `seat ${ev.seat_id} が ${ev.location || "room"} で兆しに気づいた`;
+    case "fire_warning":
+      return `seat ${ev.seat_id} が警告を出した。ブラフ評判 ${Number(ev.bluff_reputation || 0).toFixed(2)}`;
+    case "warning_belief_update":
+      return `seat ${ev.listener_seat} が seat ${ev.speaker_seat} の警告を ${Number(ev.belief || 0).toFixed(2)} だけ信じた`;
+    case "bluff_penalty_in_crisis":
+      return `seat ${ev.speaker_seat} のブラフ評判で seat ${ev.listener_seat} の信頼が鈍った`;
+    case "evacuation_decision":
+    case "smoke_decision":
+      return `seat ${ev.seat_id} は ${ev.decision} を選択`;
+    case "wrong_exit_delay":
+      return `seat ${ev.seat_id} は席を立つ判断が遅れた`;
+    case "rescue_link":
+      return `seat ${ev.helper_seat} が seat ${ev.target_seat} を救助`;
+    case "evacuated":
+      return `seat ${ev.seat_id} は席を立って避難`;
+    case "injury_or_isolation":
+      return `seat ${ev.seat_id} が煙の中で孤立`;
+    case "showdown_reinterpretation":
+      return `seat ${ev.listener_seat} が seat ${ev.speaker_seat} の警告を再解釈`;
+    case "enemy_to_rescuer_shift":
+      return `seat ${ev.target_seat} にとって seat ${ev.helper_seat} が救助者に変わった`;
+    case "crisis_summary":
+      return "避難結果が確定した";
+    default:
+      return CRISIS_EVENT_LABEL[ev.event] || ev.event || "—";
+  }
+}
+
+function dynamicDriverText(seatState) {
+  const d = seatState?.dynamic_state || {};
+  const parts = [
+    ["chip", d.chip_attachment],
+    ["loss", d.loss_chasing],
+    ["rival", d.rivalry_pressure],
+    ["fold", d.fold_success_memory],
+  ].filter(([, value]) => typeof value === "number");
+  if (!parts.length) return "feedbackなし";
+  return parts.map(([label, value]) => `${label} ${Number(value).toFixed(2)}`).join(" · ");
+}
+
+function crisisVoiceScore(seatState) {
+  const statusWeight = {
+    fatal: 10,
+    engulfed: 9,
+    trapped: 8,
+    tempted_by_chips: 7,
+    clinging_to_stack: 7,
+    hesitating: 5,
+    stood_up: 3,
+    evacuating: 4,
+    playing: 2,
+  }[seatState?.status] || 1;
+  return statusWeight
+    + Number(seatState?.danger || 0)
+    + Number(seatState?.chip_temptation || 0) * 0.8
+    + Number(seatState?.goal_pressure || 0) * 0.6;
+}
+
+function isFirstStoodUpFrame(frame, seatState) {
+  if (!seatState || seatState.status !== "stood_up") return false;
+  const stoodStep = Number(seatState.stood_up_step);
+  if (!Number.isFinite(stoodStep)) return true;
+  return Number(frame?.step) === stoodStep;
+}
+
+function isDisplayableCrisisVoice(frame, seatState) {
+  if (!seatState?.inner_voice) return false;
+  if (seatState.status === "stood_up") return isFirstStoodUpFrame(frame, seatState);
+  return true;
+}
+
+function crisisVoiceForFrame(frame) {
+  if (frame.kind !== "crisis" || !frame.crisis?.live) return null;
+  const seats = Object.values(frame.crisis.seats || {});
+  const ev = frame.crisis.currentEvent || {};
+  const actionSeat = ev.action_seat;
+  if (actionSeat !== null && actionSeat !== undefined) {
+    const current = seats.find(s => Number(s.seat_id) === Number(actionSeat));
+    if (isDisplayableCrisisVoice(frame, current)) return current;
+  }
+  return seats
+    .filter(s => isDisplayableCrisisVoice(frame, s))
+    .sort((a, b) => crisisVoiceScore(b) - crisisVoiceScore(a))[0] || null;
+}
+
+function renderCrisisPanel(frame) {
+  const section = document.getElementById("s-crisis");
+  const root = document.getElementById("crisis-panel");
+  if (frame.kind !== "crisis" || !frame.crisis) {
+    section.hidden = true;
+    root.innerHTML = "";
+    return;
+  }
+  const crisis = frame.crisis;
+  const ev = crisis.currentEvent || {};
+  const progress = crisisProgress(crisis);
+  const seats = Object.values(crisis.seats || {});
+  const delayed = seats.filter(s => ["delayed", "injured", "trapped", "engulfed", "fatal", "tempted_by_chips", "clinging_to_stack"].includes(crisisVisualStatus(s)));
+  const exited = seats.filter(s => ["stood_up", "evacuating", "exited", "rescued"].includes(crisisVisualStatus(s)));
+  const uncertain = seats.filter(s => ["playing", "doubting", "verifying", "detected", "warning", "hesitating"].includes(crisisVisualStatus(s)));
+  section.hidden = false;
+  const statusChips = seats.map(s => {
+    const status = crisisVisualStatus(s);
+    const cls = ["fatal", "engulfed", "trapped", "injured"].includes(status) ? "bad" : (["stood_up", "evacuating", "exited", "rescued"].includes(status) ? "good" : "warn");
+    return `<span class="chip ${cls}" title="${escapeHtml(dynamicDriverText(s))}">S${s.seat_id} ${CRISIS_STATUS_LABEL[status] || status}</span>`;
+  }).join("");
+  const drivers = delayed.slice(0, 4).map(s =>
+    `<div class="driver"><b>S${s.seat_id}</b><span>${escapeHtml(dynamicDriverText(s))}</span></div>`
+  ).join("");
+  root.innerHTML = `
+    <div class="headline"><b>${crisis.live ? "DANGER RING" : (CRISIS_EVENT_LABEL[ev.event] || ev.event || "FIRE")}</b><br>${escapeHtml(describeCrisisEvent(ev))}</div>
+    <div class="danger-meter"><span style="width:${Math.round(progress * 100)}%"></span></div>
+    <div class="row">
+      <div class="k">${crisis.live ? "hand" : "stage"}</div><div class="v">${crisis.live ? escapeHtml(String(ev.hand_id || frame.hand || "—")) : `${ev.stage ?? crisis.stage} · ${escapeHtml(CRISIS_STAGE_LABEL[ev.stage ?? crisis.stage] || "—")}`}</div>
+      <div class="k">pressure</div><div class="v">${Math.round(progress * 100)}%</div>
+      <div class="k">uncertain</div><div class="v">${uncertain.length}</div>
+      <div class="k">delayed</div><div class="v">${delayed.length}</div>
+      <div class="k">left</div><div class="v">${exited.length}</div>
+    </div>
+    <div class="chips">${statusChips}</div>
+    ${drivers ? `<div class="drivers">${drivers}</div>` : ""}
+  `;
+}
+
+function renderInner(frame) {
+  const host = document.getElementById("current-inner");
+  const crisisVoice = crisisVoiceForFrame(frame);
+  if (crisisVoice) {
+    host.textContent = crisisVoice.inner_voice || "(inner_voice なし)";
+    const p = crisisVoice.psych || {};
+    const psychRoot = document.getElementById("psych-grid");
+    const danger = typeof p.danger === "number" ? p.danger : Number(crisisVoice.danger || 0);
+    const belief = typeof p.belief_fire === "number" ? p.belief_fire : Number(crisisVoice.belief_fire || 0);
+    const goal = typeof p.goal_pressure === "number" ? p.goal_pressure : Number(crisisVoice.goal_pressure || 0);
+    const chip = typeof p.chip_temptation === "number" ? p.chip_temptation : Number(crisisVoice.chip_temptation || 0);
+    psychRoot.innerHTML = `
+      <div class="cell"><div class="label">fire read</div><div class="value">${escapeHtml(p.fire_read || "—")}</div></div>
+      <div class="cell"><div class="label">danger</div><div class="value">${danger.toFixed(2)}</div>
+        <div class="meter tilt"><span style="width:${Math.max(0, Math.min(1, danger))*100}%"></span></div></div>
+      <div class="cell"><div class="label">belief</div><div class="value">${belief.toFixed(2)}</div>
+        <div class="meter"><span style="width:${Math.max(0, Math.min(1, belief))*100}%"></span></div></div>
+      <div class="cell"><div class="label">reasoning</div><div class="value" style="font-weight:400">${escapeHtml(crisisVoice.reasoning || "—")}</div></div>
+    `;
+    const readsRoot = document.getElementById("reads");
+    readsRoot.innerHTML = `
+      <div><span class="seat-tag">status:</span><span>${escapeHtml(crisisVoice.status || "—")}</span></div>
+      <div><span class="seat-tag">motive:</span><span>${escapeHtml(crisisVoice.motive || "—")}</span></div>
+      <div><span class="seat-tag">exposure:</span><span>${Number(crisisVoice.exposure_ticks || 0)} ticks</span></div>
+      <div><span class="seat-tag">goal/chip:</span><span>${goal.toFixed(2)} / ${chip.toFixed(2)}</span></div>
+      <div><span class="seat-tag">drivers:</span><span>${escapeHtml(dynamicDriverText(crisisVoice))}</span></div>
+    `;
+    return;
+  }
+  const r = frame.reasoning;
+  host.textContent = r && r.inner_voice ? r.inner_voice : "(inner_voice なし)";
+  const psychRoot = document.getElementById("psych-grid");
+  const p = r && r.psych || {};
+  const mood = p.mood || "—";
+  const tilt = typeof p.tilt === "number" ? p.tilt : 0;
+  const conf = typeof p.confidence_on_hand === "number" ? p.confidence_on_hand : 0;
+  const confClip = Math.max(0, Math.min(1, conf));
+  const tiltClip = Math.max(0, Math.min(1, tilt));
+  psychRoot.innerHTML = `
+    <div class="cell"><div class="label">mood</div><div class="value">${escapeHtml(mood)}</div></div>
+    <div class="cell"><div class="label">conf on hand</div><div class="value">${conf.toFixed(2)}</div>
+      <div class="meter"><span style="width:${confClip*100}%"></span></div></div>
+    <div class="cell"><div class="label">tilt</div><div class="value">${tilt.toFixed(2)}</div>
+      <div class="meter tilt"><span style="width:${tiltClip*100}%"></span></div></div>
+    <div class="cell"><div class="label">reasoning</div><div class="value" style="font-weight:400">${escapeHtml(r && r.reasoning || "—")}</div></div>
+  `;
+  const reads = (p.reads && typeof p.reads === "object") ? p.reads : {};
+  const readsRoot = document.getElementById("reads");
+  const keys = Object.keys(reads);
+  if (!keys.length) { readsRoot.innerHTML = '<div style="color:var(--ink-dim);">—</div>'; return; }
+  readsRoot.innerHTML = keys.sort().map(k =>
+    `<div><span class="seat-tag">${k}:</span><span>${escapeHtml(String(reads[k]))}</span></div>`
+  ).join("");
+}
+
+function renderMiniVoices(frame) {
+  const { timeline } = state.seeds.get(state.currentSeed);
+  const { agentsBySeat } = state.seeds.get(state.currentSeed);
+  const cutoff = frame.step;
+  const latestBySeat = {};
+  for (const f of timeline) {
+    if (f.step > cutoff) break;
+    if (f.reasoning && f.reasoning.inner_voice) {
+      latestBySeat[f.action.seat_id] = {
+        inner: f.reasoning.inner_voice,
+        step: f.step,
+        hand: f.hand,
+      };
+    }
+    if (f.kind === "crisis" && f.crisis?.live) {
+      for (const crisisSeat of Object.values(f.crisis.seats || {})) {
+        if (!isDisplayableCrisisVoice(f, crisisSeat)) continue;
+        latestBySeat[crisisSeat.seat_id] = {
+          inner: crisisSeat.inner_voice,
+          step: f.step,
+          hand: f.hand,
+        };
+      }
+    }
+  }
+  const host = document.getElementById("mini-voices");
+  host.innerHTML = "";
+  for (let seat = 0; seat < SEAT_COUNT; seat++) {
+    const info = agentsBySeat[seat];
+    const voice = latestBySeat[seat];
+    const el = document.createElement("div");
+    el.className = `mini-voice seat-${seat}`;
+    el.innerHTML = `
+      <div class="head"><span>${PERSONA_ICON[info?.persona] || ""} <b>${info ? info.agent_id : "seat "+seat}</b></span>
+        <span>${voice ? `h${voice.hand}·s${voice.step}` : "—"}</span></div>
+      <div>${voice ? escapeHtml(voice.inner) : '<span style="color:var(--ink-dim);">—</span>'}</div>`;
+    host.appendChild(el);
+  }
+}
+
+function renderTalkFeed(frame) {
+  const { timeline, agentsBySeat } = state.seeds.get(state.currentSeed);
+  const host = document.getElementById("talk-feed");
+  host.innerHTML = "";
+  const currentHand = frame.hand;
+  const upto = frame.step;
+  let shown = 0;
+  for (const f of timeline) {
+    if (f.step > upto) break;
+    if (f.hand !== currentHand) continue;
+    for (const t of f.talks) {
+      shown++;
+      const info = agentsBySeat[t.seat_id] || {};
+      const row = document.createElement("div");
+      row.className = `talk seat-${t.seat_id}`;
+      row.innerHTML = `<div class="head">
+          <span class="who">${PERSONA_ICON[info.persona] || ""} ${t.agent_id}</span>
+          <span class="when">h${t.hand_id}·${t.street}·s${t.step}</span>
+        </div><div>${escapeHtml(t.text)}</div>`;
+      host.appendChild(row);
+    }
+  }
+  if (!shown) host.innerHTML = '<div style="color:var(--ink-dim);">(このハンドに公開発話なし)</div>';
+}
+
+const RIVALRY_KIND_LABEL = {
+  bluffed_me: "ブラフ疑い",
+  shown_strong: "強い手見せた",
+  i_beat_them: "勝った",
+  won_against_me: "負けた",
+  shown_weak_bluff: "ブラフ確定",
+};
+
+function renderSessionMemory(frame) {
+  const sd = state.seeds.get(state.currentSeed);
+  const host = document.getElementById("session-memory");
+  host.innerHTML = "";
+  if (!sd) return;
+  const { agentsBySeat, sessionByHandSeat } = sd;
+  // Show snapshot at end of (current_hand - 1) — i.e. memory entering this hand.
+  // For the very first hand there's no prior snapshot yet.
+  const targetHand = frame.hand - 1;
+  if (targetHand < 1 || !sessionByHandSeat) {
+    host.innerHTML = '<div class="empty">(記憶はハンド 2 以降に表示されます)</div>';
+    return;
+  }
+  // Pick the most recent snapshot per seat with hand_id <= targetHand.
+  const seatSnaps = {};
+  const handIds = Object.keys(sessionByHandSeat).map(Number).sort((a,b)=>a-b);
+  for (const h of handIds) {
+    if (h > targetHand) break;
+    const seats = sessionByHandSeat[h] || {};
+    for (const seatStr of Object.keys(seats)) {
+      seatSnaps[seatStr] = seats[seatStr];
+    }
+  }
+  const seats = Object.keys(seatSnaps).map(Number).sort((a,b)=>a-b);
+  if (!seats.length) {
+    host.innerHTML = '<div class="empty">(記憶はまだ蓄積されていません)</div>';
+    return;
+  }
+  for (const seat of seats) {
+    const snap = seatSnaps[seat];
+    const info = agentsBySeat[seat] || { agent_id: snap.agent_id, persona: null };
+    const card = document.createElement("div");
+    card.className = `session-card seat-${seat}`;
+
+    const tilt = typeof snap.tilt === "number" ? snap.tilt : 0;
+    const tiltClip = Math.max(0, Math.min(1, tilt));
+    const outcomes = (snap.recent_outcomes || []).slice(-4);
+    const outcomePills = outcomes.map(o => {
+      const cls = o.delta > 0 ? "win" : (o.delta < 0 ? "loss" : "");
+      const sign = o.delta > 0 ? "+" : "";
+      return `<span class="outcome-pill ${cls}" title="hand ${o.hand_id}: ${escapeHtml(o.note)}">h${o.hand_id} ${sign}${o.delta}</span>`;
+    }).join("");
+    const rivalries = (snap.rivalries || []).slice(-4);
+    const rivalryHtml = rivalries.map(r => {
+      const label = RIVALRY_KIND_LABEL[r.kind] || r.kind;
+      return `<div class="rivalry">
+        <span class="opp">${escapeHtml(r.opponent)}</span>
+        <span class="kind ${r.kind}">${escapeHtml(label)}</span>
+        <div>${escapeHtml(r.text)}</div>
+      </div>`;
+    }).join("");
+
+    card.innerHTML = `
+      <div class="head">
+        <span class="who">${PERSONA_ICON[info.persona] || "🎲"} ${escapeHtml(info.agent_id)}</span>
+        <span class="mood">${escapeHtml(snap.mood || "—")}</span>
+      </div>
+      <div class="tilt-row">
+        <span>tilt</span>
+        <div class="meter tilt"><span style="width:${tiltClip*100}%"></span></div>
+        <span class="num">${tilt.toFixed(2)}</span>
+      </div>
+      ${outcomes.length ? `<div class="outcomes">${outcomePills}</div>` : ""}
+      ${rivalryHtml || '<div class="empty" style="font-size:11px;">(因縁なし)</div>'}
+    `;
+    host.appendChild(card);
+  }
+}
+
+function renderCommentary(frame) {
+  const sd = state.seeds.get(state.currentSeed);
+  const bar = document.getElementById("commentary-bar");
+  const txt = document.getElementById("commentary-text");
+  const archiveSection = document.getElementById("s-commentary");
+  const archive = document.getElementById("commentary-archive");
+  if (!sd) return;
+  const map = sd.commentaryByStep || {};
+  const hasAny = Object.keys(map).length > 0;
+  document.body.classList.toggle("has-commentary", hasAny);
+  archiveSection.hidden = !hasAny;
+  if (!hasAny) return;
+
+  // Pick the most recent commentary at-or-before the current step.
+  const steps = Object.keys(map).map(Number).sort((a, b) => a - b);
+  let activeStep = null;
+  for (const s of steps) { if (s <= frame.step) activeStep = s; else break; }
+  if (activeStep != null) {
+    const entry = map[activeStep];
+    txt.classList.remove("live");
+    // Force a reflow so the animation re-runs even if text is unchanged.
+    void txt.offsetWidth;
+    // qwen3.5 occasionally emits blank-line padding ("foo\n\n\nbar") that
+    // burns through the 3-line clamp. Collapse runs of newlines + trim.
+    txt.textContent = String(entry.text || "").replace(/\n{2,}/g, "\n").trim();
+    txt.classList.add("live");
+  } else {
+    txt.innerHTML = '<span class="empty">(まだ実況なし)</span>';
+  }
+
+  // Sidebar archive: all commentary lines for the current hand up to current step.
+  archive.innerHTML = "";
+  for (const s of steps) {
+    if (s > frame.step) break;
+    const entry = map[s];
+    if (entry.hand_id !== frame.hand) continue;
+    const row = document.createElement("div");
+    row.className = "row" + (s === activeStep ? " current" : "");
+    row.innerHTML = `<div class="meta">step ${s} · hand ${entry.hand_id}</div>${escapeHtml(entry.text)}`;
+    archive.appendChild(row);
+  }
+  if (!archive.children.length) {
+    archive.innerHTML = '<div style="color:var(--ink-dim);font-size:12px;">(このハンドの実況なし)</div>';
+  } else {
+    archive.scrollTop = archive.scrollHeight;
+  }
+}
+
+function renderHandBanner(frame) {
+  if (frame.kind === "crisis" && frame.crisis) {
+    const ev = frame.crisis.currentEvent || {};
+    const banner = document.getElementById("hand-banner");
+    if (frame.crisis.live) {
+      const phase = ev.post_poker ? "AFTER MATCHUP" : `HAND ${ev.hand_id ?? frame.hand}`;
+      banner.textContent = `ALL-IN SMOKE · ${phase} · RING ${Math.round((ev.pressure || 0) * 100)}%`;
+    } else {
+      banner.textContent = `ALL-IN SMOKE · ${(CRISIS_EVENT_LABEL[ev.event] || ev.event || "FIRE").toUpperCase()}`;
+    }
+    return;
+  }
+  const s = frame.state;
+  const banner = document.getElementById("hand-banner");
+  banner.textContent = `HAND ${s.hand_id} · ${s.street.toUpperCase()} · SB ${s.small_blind}/BB ${s.big_blind}`;
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+}
+
+// --------- Controller ---------
+function renderFrame(idx) {
+  const sd = state.seeds.get(state.currentSeed);
+  if (!sd) return;
+  if (idx < 0) idx = 0;
+  if (idx >= sd.timeline.length) idx = sd.timeline.length - 1;
+  state.stepIndex = idx;
+
+  const frame = sd.timeline[idx];
+  const isCrisisFrame = frame.kind === "crisis";
+  document.body.classList.toggle("crisis-mode", isCrisisFrame);
+  document.getElementById("table").classList.toggle("crisis-compact", isCrisisFrame);
+  document.getElementById("pot").textContent = frame.state.pot;
+  renderBoard(frame.state.board);
+  renderSeats(frame);
+  renderActionSummary(frame);
+  renderInner(frame);
+  renderMiniVoices(frame);
+  renderSessionMemory(frame);
+  renderCommentary(frame);
+  renderTalkFeed(frame);
+  renderHandBanner(frame);
+  renderCrisisOverlay(frame);
+  renderCrisisPanel(frame);
+
+  const scrub = document.getElementById("scrub");
+  scrub.max = sd.timeline.length - 1;
+  scrub.value = idx;
+  document.getElementById("indicator").textContent = frame.kind === "crisis" && frame.crisis
+    ? `danger ${frame.crisis.frameNumber}/${frame.crisis.totalFrames} · ${idx + 1} / ${sd.timeline.length}`
+    : `step ${frame.step}  ·  ${idx + 1} / ${sd.timeline.length}`;
+
+  document.getElementById("btn-prev").disabled = idx <= 0;
+  document.getElementById("btn-first").disabled = idx <= 0;
+  document.getElementById("btn-next").disabled = idx >= sd.timeline.length - 1;
+  document.getElementById("btn-last").disabled = idx >= sd.timeline.length - 1;
+}
+
+function stopPlay() {
+  if (state.playTimer) { clearInterval(state.playTimer); state.playTimer = null; }
+  document.getElementById("btn-play").textContent = "▶︎";
+}
+function togglePlay() {
+  if (state.playTimer) { stopPlay(); return; }
+  const speed = parseInt(document.getElementById("speed").value, 10);
+  document.getElementById("btn-play").textContent = "⏸";
+  state.playTimer = setInterval(() => {
+    const sd = state.seeds.get(state.currentSeed);
+    if (!sd) return stopPlay();
+    if (state.stepIndex >= sd.timeline.length - 1) return stopPlay();
+    renderFrame(state.stepIndex + 1);
+  }, speed);
+}
+
+function activateSeed(seedKey) {
+  state.currentSeed = seedKey;
+  const sd = state.seeds.get(seedKey);
+  if (!sd) return;
+  document.getElementById("empty").hidden = true;
+  document.getElementById("table").hidden = false;
+  document.getElementById("side").hidden = false;
+  renderFrame(0);
+}
+
+async function loadFiles(fileList) {
+  stopPlay();
+  // Group files by seed key so a separate commentary.jsonl merges with its run.
+  const eventsBySeed = new Map();   // seedKey -> { events: [], name: string }
+  for (const f of fileList) {
+    const text = await f.text();
+    const events = parseRunFile(f.name, text);
+    if (!events.length) continue;
+    const seedKey = (f.name.match(/seed(\d+)/)?.[1]) || f.name;
+    if (!eventsBySeed.has(seedKey)) eventsBySeed.set(seedKey, { events: [], name: f.name });
+    const bucket = eventsBySeed.get(seedKey);
+    bucket.events.push(...events);
+    // Prefer the run file's name (has actions) for display.
+    if (events.some(e => e.event === "action")) bucket.name = f.name;
+  }
+  for (const [seedKey, bucket] of eventsBySeed) {
+    const timeline = buildTimelineFromEvents(bucket.events);
+    if (!timeline.timeline.length) continue;
+    state.seeds.set(seedKey, { ...timeline, name: bucket.name });
+  }
+  if (!state.seeds.size) return;
+  const sel = document.getElementById("seed-select");
+  sel.innerHTML = "";
+  for (const k of state.seeds.keys()) {
+    const opt = document.createElement("option");
+    opt.value = k; opt.textContent = `seed ${k}`;
+    sel.appendChild(opt);
+  }
+  sel.hidden = state.seeds.size <= 1;
+  const firstKey = state.seeds.keys().next().value;
+  sel.value = firstKey;
+  activateSeed(firstKey);
+}
+
+document.getElementById("file-picker").addEventListener("change", e => loadFiles(e.target.files));
+document.getElementById("seed-select").addEventListener("change", e => activateSeed(e.target.value));
+document.getElementById("btn-first").onclick = () => { stopPlay(); renderFrame(0); };
+document.getElementById("btn-last").onclick  = () => { stopPlay(); const sd = state.seeds.get(state.currentSeed); if (sd) renderFrame(sd.timeline.length-1); };
+document.getElementById("btn-prev").onclick  = () => { stopPlay(); renderFrame(state.stepIndex-1); };
+document.getElementById("btn-next").onclick  = () => { stopPlay(); renderFrame(state.stepIndex+1); };
+document.getElementById("btn-play").onclick  = togglePlay;
+document.getElementById("scrub").addEventListener("input", e => { stopPlay(); renderFrame(parseInt(e.target.value,10)); });
+document.getElementById("speed").addEventListener("change", () => {
+  if (state.playTimer) { stopPlay(); togglePlay(); }
+});
+document.addEventListener("keydown", e => {
+  if (e.target.matches("input,select,textarea")) return;
+  if (e.code === "Space") { e.preventDefault(); togglePlay(); }
+  else if (e.code === "ArrowLeft")  { stopPlay(); renderFrame(state.stepIndex-1); }
+  else if (e.code === "ArrowRight") { stopPlay(); renderFrame(state.stepIndex+1); }
+  else if (e.code === "Home") { stopPlay(); renderFrame(0); }
+  else if (e.code === "End")  { stopPlay(); const sd = state.seeds.get(state.currentSeed); if (sd) renderFrame(sd.timeline.length-1); }
+});
+
+// Expose internals so automation tools (Playwright-based video exporter)
+// can drive the viewer from outside the script scope.
+window.state = state;
+window.renderFrame = renderFrame;
+
+async function loadFilesFromQuery() {
+  const params = new URLSearchParams(window.location.search);
+  const rawFiles = [
+    ...params.getAll("file"),
+    ...((params.get("files") || "").split(","))
+  ].map(s => s.trim()).filter(Boolean);
+  if (!rawFiles.length) return;
+
+  const files = [];
+  for (const path of rawFiles) {
+    const url = /^[a-z][a-z0-9+.-]*:\/\//i.test(path) || path.startsWith("/")
+      ? path
+      : `/${path}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`failed to load ${url}: ${response.status}`);
+    }
+    const text = await response.text();
+    files.push({
+      name: url.split("/").pop() || url,
+      text: async () => text,
+    });
+  }
+  await loadFiles(files);
+
+  const speed = params.get("speed");
+  const speedOptions = Array.from(document.getElementById("speed").options);
+  if (speed && speedOptions.some(option => option.value === speed)) {
+    document.getElementById("speed").value = speed;
+  }
+  const step = params.get("step");
+  if (step !== null) {
+    const index = Math.max(0, parseInt(step, 10) || 0);
+    renderFrame(index);
+  }
+  if (params.get("autoplay") === "1") {
+    togglePlay();
+  }
+}
+
+loadFilesFromQuery().catch(error => {
+  console.error(error);
+  document.getElementById("empty").innerHTML = `
+    <div>
+      <div style="font-size:18px;color:var(--ink);">ログの自動読み込みに失敗しました</div>
+      <div><code>${escapeHtml(error.message)}</code></div>
+      <button onclick="document.getElementById('file-picker').click()">jsonl を選ぶ</button>
+    </div>
+  `;
+});
+</script>
+</body>
+</html>

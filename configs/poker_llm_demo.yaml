@@ -1,0 +1,28 @@
+agents:
+  - agent_id: qwen-0
+    seat_id: 0
+    type: llm
+    model: qwen3.5:9b
+    endpoint: http://localhost:11434/api/chat
+    timeout: 45.0
+    temperature: 0.6
+    think: false
+  - agent_id: tight-1
+    seat_id: 1
+    type: scripted
+    class: TightAgent
+  - agent_id: calling-2
+    seat_id: 2
+    type: scripted
+    class: CallingAgent
+  - agent_id: aggro-3
+    seat_id: 3
+    type: scripted
+    class: AggressiveAgent
+
+tournament:
+  starting_stack: 1000
+  num_hands: 20
+  small_blind: 5
+  big_blind: 10
+  seeds: [1]

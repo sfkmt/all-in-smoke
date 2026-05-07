@@ -1,0 +1,100 @@
+agents:
+  - agent_id: "Ren(31)"
+    seat_id: 0
+    type: openrouter
+    model: x-ai/grok-4.1-fast
+    api_key_env: OPENROUTER_API_KEY
+    timeout: 45.0
+    temperature: 0.2
+    think: false
+    table_talk_allowed: false
+    gender: "male"
+    full_name: "Mizuno Ren"
+    timeql_agent_id: 0
+
+  - agent_id: "Bloom(27)"
+    seat_id: 1
+    type: openrouter
+    model: x-ai/grok-4.1-fast
+    api_key_env: OPENROUTER_API_KEY
+    timeout: 45.0
+    temperature: 0.25
+    think: false
+    table_talk_allowed: true
+    gender: "female"
+    full_name: "Sample Bloom"
+    timeql_agent_id: 1
+
+  - agent_id: "Cipher(36)"
+    seat_id: 2
+    type: openrouter
+    model: x-ai/grok-4.1-fast
+    api_key_env: OPENROUTER_API_KEY
+    timeout: 45.0
+    temperature: 0.3
+    think: false
+    table_talk_allowed: true
+    gender: "male"
+    full_name: "Sample Cipher"
+    timeql_agent_id: 2
+
+  - agent_id: "Delta(41)"
+    seat_id: 3
+    type: openrouter
+    model: x-ai/grok-4.1-fast
+    api_key_env: OPENROUTER_API_KEY
+    timeout: 45.0
+    temperature: 0.28
+    think: false
+    table_talk_allowed: true
+    gender: "female"
+    full_name: "Sample Delta"
+    timeql_agent_id: 3
+
+  - agent_id: "Soma(42)"
+    seat_id: 4
+    type: openrouter
+    model: x-ai/grok-4.1-fast
+    api_key_env: OPENROUTER_API_KEY
+    timeout: 45.0
+    temperature: 0.15
+    think: false
+    table_talk_allowed: false
+    gender: "male"
+    full_name: "Takase Soma"
+    timeql_agent_id: 4
+
+  - agent_id: "Flux(60)"
+    seat_id: 5
+    type: openrouter
+    model: x-ai/grok-4.1-fast
+    api_key_env: OPENROUTER_API_KEY
+    timeout: 45.0
+    temperature: 0.15
+    think: false
+    table_talk_allowed: false
+    gender: "female"
+    full_name: "Sample Flux"
+    timeql_agent_id: 5
+
+tournament:
+  starting_stack: 1000
+  num_hands: 64
+  small_blind: 5
+  big_blind: 10
+  blind_increase_every: 4
+  blind_multiplier: 2
+  max_big_blind: 2560
+  freeze_blinds_when_heads_up: true
+  heads_up_small_blind: 160
+  heads_up_big_blind: 320
+  seeds: [13]
+
+crisis:
+  title: "ALL-IN SMOKE OPENROUTER GROK FULL"
+  fire_origin: "storage"
+  fire_start_when: "tournament_heads_up"
+  fire_duration_ticks: 48
+  seed: 813
+  # Optional local TimeQL Free plan output. Generated persona profiles are gitignored.
+  # timeql_profiles_path: "../personas/agentspoker_timeql_lack_contrast_profiles.json"

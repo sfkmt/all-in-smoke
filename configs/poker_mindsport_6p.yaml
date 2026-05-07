@@ -1,0 +1,62 @@
+agents:
+  - agent_id: analyst-0
+    seat_id: 0
+    type: llm
+    model: qwen3.5:4b
+    endpoint: http://localhost:11434/api/chat
+    timeout: 60.0
+    temperature: 0.5
+    think: false
+    persona: analyst
+  - agent_id: stoic-1
+    seat_id: 1
+    type: llm
+    model: qwen3.5:4b
+    endpoint: http://localhost:11434/api/chat
+    timeout: 60.0
+    temperature: 0.5
+    think: false
+    persona: stoic
+  - agent_id: needler-2
+    seat_id: 2
+    type: llm
+    model: qwen3.5:4b
+    endpoint: http://localhost:11434/api/chat
+    timeout: 60.0
+    temperature: 0.8
+    think: false
+    persona: needler
+  - agent_id: showman-3
+    seat_id: 3
+    type: llm
+    model: qwen3.5:4b
+    endpoint: http://localhost:11434/api/chat
+    timeout: 60.0
+    temperature: 0.9
+    think: false
+    persona: showman
+  - agent_id: gambler-4
+    seat_id: 4
+    type: llm
+    model: qwen3.5:4b
+    endpoint: http://localhost:11434/api/chat
+    timeout: 60.0
+    temperature: 0.95
+    think: false
+    persona: gambler
+  - agent_id: veteran-5
+    seat_id: 5
+    type: llm
+    model: qwen3.5:4b
+    endpoint: http://localhost:11434/api/chat
+    timeout: 60.0
+    temperature: 0.4
+    think: false
+    persona: veteran
+
+tournament:
+  starting_stack: 1000
+  num_hands: 100
+  small_blind: 5
+  big_blind: 10
+  seeds: [1]

@@ -1,0 +1,95 @@
+agents:
+  - agent_id: "Ren(31)"
+    seat_id: 0
+    type: scripted
+    class: TightAgent
+    gender: "male"
+    full_name: "Mizuno Ren"
+    timeql_agent_id: 0
+
+  - agent_id: "Bloom(27)"
+    seat_id: 1
+    type: scripted
+    class: AggressiveAgent
+    gender: "female"
+    full_name: "Sample Bloom"
+    timeql_agent_id: 1
+    crisis_profile:
+      location: "bar"
+      ability_gaps:
+        fold_ability: 0.72
+        trust_calibration: 0.44
+        situational_awareness: 0.20
+        public_responsibility: 0.22
+        meaning_update: 0.30
+
+  - agent_id: "Cipher(36)"
+    seat_id: 2
+    type: scripted
+    class: CallingAgent
+    gender: "male"
+    full_name: "Sample Cipher"
+    timeql_agent_id: 2
+    crisis_profile:
+      ability_gaps:
+        fold_ability: 0.84
+        trust_calibration: 0.58
+        help_seeking: 0.34
+        self_control: 0.45
+
+  - agent_id: "Delta(41)"
+    seat_id: 3
+    type: scripted
+    class: RandomAgent
+    seed: 300
+    gender: "female"
+    full_name: "Sample Delta"
+    timeql_agent_id: 3
+    crisis_profile:
+      ability_gaps:
+        fold_ability: 0.55
+        situational_awareness: 0.68
+        self_control: 0.66
+        reciprocity: 0.38
+
+  - agent_id: "Soma(42)"
+    seat_id: 4
+    type: scripted
+    class: TightAgent
+    gender: "male"
+    full_name: "Takase Soma"
+    timeql_agent_id: 4
+    crisis_profile:
+      location: "table_c"
+
+  - agent_id: "Flux(60)"
+    seat_id: 5
+    type: scripted
+    class: CallingAgent
+    gender: "female"
+    full_name: "Sample Flux"
+    timeql_agent_id: 5
+    crisis_profile:
+      ability_gaps:
+        trust_calibration: 0.76
+        situational_awareness: 0.42
+        public_responsibility: 0.36
+
+tournament:
+  starting_stack: 1000
+  num_hands: 80
+  small_blind: 5
+  big_blind: 10
+  blind_increase_every: 8
+  blind_multiplier: 2
+  max_big_blind: 320
+  seeds: [13]
+
+crisis:
+  title: "ALL-IN SMOKE"
+  fire_origin: "storage"
+  fire_start_when: "tournament_heads_up"
+  fire_duration_ticks: 48
+  seed: 813
+  # Optional local TimeQL Free plan output. Generated persona profiles are gitignored.
+  # timeql_profiles_path: "../personas/agentspoker_timeql_lack_contrast_profiles.json"

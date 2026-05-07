@@ -1,0 +1,25 @@
+agents:
+  - agent_id: tight-0
+    seat_id: 0
+    type: scripted
+    class: TightAgent
+  - agent_id: calling-1
+    seat_id: 1
+    type: scripted
+    class: CallingAgent
+  - agent_id: aggro-2
+    seat_id: 2
+    type: scripted
+    class: AggressiveAgent
+  - agent_id: random-3
+    seat_id: 3
+    type: scripted
+    class: RandomAgent
+    seed: 42
+
+tournament:
+  starting_stack: 1000
+  num_hands: 40
+  small_blind: 5
+  big_blind: 10
+  seeds: [1, 2, 3]
